@@ -1,6 +1,7 @@
 use log::{info, error};
 use tokio_postgres::{NoTls, Error};
 use dotenv::dotenv;
+use axum::{routing::get, Router};
 
 mod embedded {
     refinery::embed_migrations!("migrations");
@@ -24,6 +25,10 @@ async fn main() -> Result<(), Error> {
     for migration in report.applied_migrations() {
         info!("Migration Applied - Name: {}, Version: {}", migration.name(), migration.version());
     }
-    info!("Applied {} migrations", report.applied_migrations().len());    
+    info!("Applied {} migrations", report.applied_migrations().len());  
+      
+    let app = Router::new().route("/", get(|| async { "Basics)" }));
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8081").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
     Ok(())
 }
