@@ -1,7 +1,6 @@
 use log::{info};
 use tokio_postgres::{Error};
 use dotenv::dotenv;
-use axum::{extract::State, extract::Path};
 use std::sync::Arc;
 use app_state::AppState;
 use openapi::apis::default::{Default, UserRegisterPostResponse, LoginPostResponse, UserGetIdGetResponse};
@@ -13,14 +12,6 @@ use openapi::models::{self, User};
 
 mod app_state;
 mod migrations;
-
-async fn handle_get_user(Path(id): Path<String>, State(state): State<Arc<AppState>>) -> String {
-    let client = state.pool.get().await.unwrap();
-    let stmt = client.prepare_cached("SELECT 1 + $1").await.unwrap();
-    let rows = client.query(&stmt, &[&2]).await.unwrap();
-    let value: i32 = rows[0].get(0);    
-    "Basics)".to_string() + &value.to_string() + &id
-}
 
 #[derive(Clone)]
 struct Server {
@@ -52,7 +43,11 @@ impl Default for Server {
         _: &CookieJar,
         _: &Option<models::LoginPostRequest>
     ) -> Result<LoginPostResponse, ()> {
-        Ok(LoginPostResponse::Status400)
+        Ok(
+            LoginPostResponse::Status200(
+                models::LoginPost200Response{token: Some("use this Token, Luke!".to_string())}
+            )
+        )
     }
 
     async fn user_get_id_get(
@@ -85,7 +80,13 @@ impl Default for Server {
         _: &CookieJar,
         _: &Option<models::UserRegisterPostRequest>
     ) -> Result<UserRegisterPostResponse, ()> {
-        Ok(UserRegisterPostResponse::Status400)
+        Ok(
+            UserRegisterPostResponse::Status200(
+                models::UserRegisterPost200Response {
+                    user_id: Some("1234".to_string())
+                }
+            )
+        )
     }
 }
 
