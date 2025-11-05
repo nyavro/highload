@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use openapi::models::{self, User};
 use std::sync::Arc;
 use crate::app_state::AppState;
+use crate::user_service;
 
 #[derive(Clone)]
 pub struct Application {
@@ -72,14 +73,31 @@ impl Default for Application {
         _: &Method,
         _: &Host,
         _: &CookieJar,
-        _: &Option<models::UserRegisterPostRequest>
-    ) -> Result<UserRegisterPostResponse, ()> {
+        user_registration_request: &Option<models::UserRegisterPostRequest>
+    ) -> Result<UserRegisterPostResponse, ()> {                
         Ok(
-            UserRegisterPostResponse::Status200(
-                models::UserRegisterPost200Response {
-                    user_id: Some("1234".to_string())
-                }
-            )
+            match user_registration_request {                
+                Some(req) => {
+                    let client = self.state.pool.get().await.unwrap();
+                    let res = user_service::register_user(
+                        client,
+                        user_service::UserRegistration {
+                            first_name: &req.first_name,
+                            second_name: &req.second_name,
+                            birthdate: &req.birthdate,
+                            biography: &req.biography,
+                            city: &req.city,
+                            password: &req.password,
+                        }
+                    ).await;
+                    UserRegisterPostResponse::Status200(
+                        models::UserRegisterPost200Response {
+                            user_id: res.user_id
+                        }
+                    )
+                },
+                None => UserRegisterPostResponse::Status400
+            }            
         )
     }
 }

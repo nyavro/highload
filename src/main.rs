@@ -8,6 +8,7 @@ use application::Application;
 mod app_state;
 mod migrations;
 mod application;
+mod user_service;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
