@@ -90,11 +90,14 @@ impl Default for Application {
                             password: &req.password,
                         }
                     ).await;
-                    UserRegisterPostResponse::Status200(
-                        models::UserRegisterPost200Response {
-                            user_id: res.user_id
-                        }
-                    )
+                    match res {
+                        Ok(r) => UserRegisterPostResponse::Status200(
+                            models::UserRegisterPost200Response {
+                                user_id: r.user_id
+                                }
+                            ),
+                        Err(_) => UserRegisterPostResponse::Status400
+                    }
                 },
                 None => UserRegisterPostResponse::Status400
             }            
