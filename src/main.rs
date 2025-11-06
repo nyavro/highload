@@ -9,6 +9,7 @@ mod app_state;
 mod migrations;
 mod application;
 mod user_service;
+mod password_hash;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

@@ -36,13 +36,30 @@ impl Default for Application {
         _: &Method,
         _: &Host,
         _: &CookieJar,
-        _: &Option<models::LoginPostRequest>
+        login: &Option<models::LoginPostRequest>
     ) -> Result<LoginPostResponse, ()> {
-        Ok(
-            LoginPostResponse::Status200(
-                models::LoginPost200Response{token: Some("use this Token, Luke!".to_string())}
+        //    pub id: Option<String>,
+
+    // #[serde(rename = "password")]
+    //       #[validate(custom(function = "check_xss_string"))]
+    // #[serde(skip_serializing_if="Option::is_none")]
+    // pub password: Option<String>,
+        let login = login.clone().expect("No login passed");
+        let client = self.state.pool.get().await.unwrap();
+        match user_service::authenticate_user(
+            client,
+            login.id.expect("Login must contain user id"),
+            login.password.expect("Login must contain user password"),
+        ) {
+            Ok(_) => Ok(
+                LoginPostResponse::Status200(
+                    models::LoginPost200Response{token: Some("use this Token, Luke!".to_string())}
+                )
+            ),
+            Err(e) => Ok(
+                LoginPostResponse::Status400
             )
-        )
+        }        
     }
 
     async fn user_get_id_get(
