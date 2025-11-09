@@ -1,5 +1,6 @@
 use deadpool_postgres::{Object};
 use crate::password_hash;
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct UserRegistration<'a> {
@@ -30,20 +31,19 @@ pub async fn register_user<'a>(client: Object, req: UserRegistration<'a>) -> Res
     let second_name = req.second_name.clone().expect("No second name specified");    
     match check_if_user_exists(&client, &second_name).await {
         Ok(_) => {
-            let (salt, password_hash) = password_hash::hash_password(
+            let (_salt, password_hash) = password_hash::hash_password(
                 req.password.clone().expect("No password specified")
             );
-            let statement = client.prepare_cached("INSERT INTO users (first_name, second_name, birthdate, biography, city, pwd, salt) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id").await.unwrap();
+            let statement = client.prepare_cached("INSERT INTO users (first_name, second_name, birthdate, biography, city, pwd) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id").await.unwrap();
             let res = client.query_one(&statement, &[
                 &req.first_name.clone().expect("No first name specified"),
                 &req.second_name.clone().expect("No second name specified"),
                 &req.birthdate.map(|t| t),
                 &req.biography,
                 &req.city,
-                &password_hash,
-                &salt.to_string()
+                &password_hash
             ]).await.unwrap();
-            let id: i32 = res.get(0);
+            let id: Uuid = res.get(0);
             Ok(UserRegistrationResult {
                 user_id: Some(id.to_string())
             })
@@ -52,6 +52,9 @@ pub async fn register_user<'a>(client: Object, req: UserRegistration<'a>) -> Res
     }    
 }
 
-pub fn authenticate_user(client: Object, login: String, password: String) -> Result<bool, String> {
-    todo!()
+pub async fn authenticate_user(client: Object, id: Uuid, password: String) -> Result<bool, String> {
+    let st = client.prepare_cached("SELECT pwd FROM users WHERE id=$1").await.unwrap();
+    let res = client.query_one(&st, &[&id]).await.unwrap();
+    let hash: String = res.get(0);    
+    Ok(password_hash::check_password(password, hash))
 }

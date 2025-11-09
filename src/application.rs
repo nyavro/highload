@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 use openapi::apis::default::{Default, UserRegisterPostResponse, LoginPostResponse, UserGetIdGetResponse};
 use openapi::apis::ErrorHandler;
 use axum_extra::extract::{CookieJar, Host};
@@ -7,6 +8,7 @@ use openapi::models::{self, User};
 use std::sync::Arc;
 use crate::app_state::AppState;
 use crate::user_service;
+use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct Application {
@@ -38,23 +40,19 @@ impl Default for Application {
         _: &CookieJar,
         login: &Option<models::LoginPostRequest>
     ) -> Result<LoginPostResponse, ()> {
-        //    pub id: Option<String>,
-
-    // #[serde(rename = "password")]
-    //       #[validate(custom(function = "check_xss_string"))]
-    // #[serde(skip_serializing_if="Option::is_none")]
-    // pub password: Option<String>,
         let login = login.clone().expect("No login passed");
         let client = self.state.pool.get().await.unwrap();
         match user_service::authenticate_user(
             client,
-            login.id.expect("Login must contain user id"),
+            Uuid::parse_str(&login.id.expect("Login must contain user id")).unwrap(),
             login.password.expect("Login must contain user password"),
-        ) {
-            Ok(_) => Ok(
-                LoginPostResponse::Status200(
-                    models::LoginPost200Response{token: Some("use this Token, Luke!".to_string())}
-                )
+        ).await {
+            Ok(res) => Ok(
+                if res { 
+                    LoginPostResponse::Status200(models::LoginPost200Response{token: Some("use this Token, Luke!".to_string())}) }
+                else {
+                    LoginPostResponse::Status400    
+                }
             ),
             Err(e) => Ok(
                 LoginPostResponse::Status400
@@ -69,18 +67,22 @@ impl Default for Application {
         _: &CookieJar,
         path_params: &models::UserGetIdGetPathParams
     ) -> Result<UserGetIdGetResponse, ()> {
-        let id = path_params.id.clone();
+        let id = Uuid::parse_str(&path_params.id).unwrap();
         let client = self.state.pool.get().await.unwrap();
-        let stmt = client.prepare_cached("SELECT 1 + $1").await.unwrap();
-        let rows = client.query(&stmt, &[&2]).await.unwrap();
-        let value: i32 = rows[0].get(0);            
+        let stmt = client.prepare_cached("SELECT first_name, second_name, birthdate, biography, city FROM users WHERE id=$1").await.unwrap();
+        let row = client.query_one(&stmt, &[&id]).await.unwrap();
+        let first_name: String = row.get(0);            
+        let second_name: String = row.get(1);            
+        let birthdate: Option<NaiveDate> = row.get(2);            
+        let biography: Option<String> = row.get(3);            
+        let city: Option<String> = row.get(4);            
         Ok(UserGetIdGetResponse::Status200(
-            User{id: Some(id),
-                 first_name: Some("first_name_test".to_string()),
-                 second_name: Some("second_name_test".to_string()),
-                 birthdate: None,
-                 biography: Some("Basics)".to_string() + &value.to_string()),
-                 city: Some("city".to_string())}
+            User{id: Some(id.to_string()),
+                 first_name: Some(first_name),
+                 second_name: Some(second_name),
+                 birthdate,
+                 biography,
+                 city}
             )
         )
     }

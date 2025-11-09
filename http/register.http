@@ -4,6 +4,6 @@ accept: application/json
 
 {
     "first_name": "ivanko",
-    "second_name": "vanovak",
+    "second_name": "vanod",
     "password": "secret1"
 }
