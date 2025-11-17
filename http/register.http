@@ -3,7 +3,7 @@ content-type: application/json
 accept: application/json
 
 {
-    "first_name": "ivanko",
-    "second_name": "vanod",
-    "password": "secret1"
+    "first_name": "ivand",
+    "second_name": "vanoasd",
+    "password": "secret2"
 }

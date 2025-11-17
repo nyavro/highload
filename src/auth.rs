@@ -1,8 +1,9 @@
 use serde::{Serialize, Deserialize};
 use jsonwebtoken::{encode, decode, Header, EncodingKey, DecodingKey, Validation, Algorithm};
 
+
 #[derive(Debug, Serialize, Deserialize)]
-struct Claims {
+pub struct Claims {
     sub: uuid::Uuid, // user ID
     exp: usize,  // expiration time
 }

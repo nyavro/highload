@@ -126,6 +126,11 @@
     },
     "/user/get/{id}": {
       "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "description": "Получение анкеты пользователя",
         "parameters": [
           {
@@ -251,6 +256,13 @@
             "description": "Город"
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Авторизация по токену, который был получен в методе /login"
       }
     }
   }

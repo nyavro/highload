@@ -31,3 +31,4 @@ uuid = { version = "1.18.1", features = ["v4"] }
 jwt = "0.16.0"
 jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
 serde = "1.0.228"
+axum-jwt-auth = "0.6.2"

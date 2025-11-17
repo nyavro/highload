@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 use openapi::apis::default::{Default, UserRegisterPostResponse, LoginPostResponse, UserGetIdGetResponse};
-use openapi::apis::ErrorHandler;
+use openapi::apis::{ApiAuthBasic, BasicAuthKind, ErrorHandler};
 use axum_extra::extract::{CookieJar, Host};
 use axum::http::Method;
 use async_trait::async_trait; 
@@ -10,6 +10,10 @@ use crate::app_state::AppState;
 use crate::user_service;
 use uuid::Uuid;
 use crate::auth;
+use axum::response::IntoResponse;
+use axum::{http::{StatusCode}};
+use log::{info};
+use jsonwebtoken::{decode, DecodingKey, Validation};
 
 #[derive(Clone)]
 pub struct Application {
@@ -19,6 +23,37 @@ pub struct Application {
 impl AsRef<Application> for Application {
     fn as_ref(&self) -> &Application {
         &self
+    }
+}
+
+#[async_trait::async_trait]
+impl ApiAuthBasic for Application {
+    type Claims = auth::Claims;
+    async fn extract_claims_from_auth_header(&self, kind: BasicAuthKind, headers: &axum::http::header::HeaderMap, key: &str) -> Option<Self::Claims> {
+        // 1. Получаем заголовок Authorization
+        let auth_header = headers.get("Authorization")
+            .and_then(|value| value.to_str().ok())
+            .ok_or_else(|| {
+                (StatusCode::UNAUTHORIZED, "Missing or invalid Authorization header").into_response()
+            }).unwrap();
+
+        // 2. Проверяем, что заголовок начинается с "Bearer "
+        let token = auth_header.strip_prefix("Bearer ")
+            .ok_or_else(|| {
+                (StatusCode::UNAUTHORIZED, "Invalid authorization scheme, expected Bearer").into_response()
+            }).unwrap();
+        info!("{:?}", token);
+        // 3. Считываем секретный ключ (лучше передавать через Axum State, но пока так)
+        let secret = std::env::var("JWT_SECRET").unwrap();
+        let decoding_key = DecodingKey::from_secret(secret.as_bytes());
+
+        // 4. Декодируем и валидируем токен
+        let validation = Validation::default();
+        let claims_data = decode::<auth::Claims>(token, &decoding_key, &validation)
+            .map_err(|_| {
+                (StatusCode::UNAUTHORIZED, "Invalid or expired token").into_response()
+            }).unwrap();
+        Some(claims_data.claims)
     }
 }
 
@@ -33,6 +68,7 @@ impl ErrorHandler for Application {}
 
 #[async_trait]
 impl Default for Application {
+    type Claims = auth::Claims;
 
     async fn login_post(
         &self,    
@@ -71,6 +107,7 @@ impl Default for Application {
         _: &Method,
         _: &Host,
         _: &CookieJar,
+        _: &Self::Claims,
         path_params: &models::UserGetIdGetPathParams
     ) -> Result<UserGetIdGetResponse, ()> {
         let id = Uuid::parse_str(&path_params.id).unwrap();
