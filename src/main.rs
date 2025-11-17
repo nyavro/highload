@@ -13,8 +13,11 @@ mod password_hash;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    dotenv().ok();
+    dotenv::from_filename(".env.secret").ok(); //JWT token secret
+    dotenv().ok();    
     env_logger::init();    
+    let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set!");
+    info!("Secret: {}", jwt_secret);
     let app_state = Arc::new(AppState::init().await);
     migrations::run_migrations(app_state.clone()).await;
     let app = openapi::server::new(Application::new (app_state));    
@@ -23,4 +26,4 @@ async fn main() -> Result<(), Error> {
     info!("Server is running on port {}", port);
     axum::serve(listener, app).await.unwrap();
     Ok(())
-}
+} 

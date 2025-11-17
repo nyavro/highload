@@ -54,7 +54,7 @@ impl Default for Application {
                     LoginPostResponse::Status400    
                 }
             ),
-            Err(e) => Ok(
+            Err(_) => Ok(
                 LoginPostResponse::Status400
             )
         }        

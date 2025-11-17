@@ -1,5 +1,4 @@
-version: "3.9"
-services:
+services:  
   postgres:
     image: postgres:13.3
     environment:
@@ -8,3 +7,10 @@ services:
       POSTGRES_PASSWORD: "pgpassword"
     ports:
       - "5432:5432"
+
+  application:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
