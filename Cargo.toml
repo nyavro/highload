@@ -28,3 +28,6 @@ argon2 = { version = "0.5.3", features = ["std"] }
 rand = "0.9.2"
 rand_core = "0.9.3"
 uuid = { version = "1.18.1", features = ["v4"] }
+jwt = "0.16.0"
+jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
+serde = "1.0.228"

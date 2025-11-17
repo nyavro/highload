@@ -5,6 +5,7 @@ use std::sync::Arc;
 use app_state::AppState;
 use application::Application;
 
+mod auth;
 mod app_state;
 mod migrations;
 mod application;

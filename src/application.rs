@@ -9,6 +9,7 @@ use std::sync::Arc;
 use crate::app_state::AppState;
 use crate::user_service;
 use uuid::Uuid;
+use crate::auth;
 
 #[derive(Clone)]
 pub struct Application {
@@ -42,14 +43,19 @@ impl Default for Application {
     ) -> Result<LoginPostResponse, ()> {
         let login = login.clone().expect("No login passed");
         let client = self.state.pool.get().await.unwrap();
+        let uuid = Uuid::parse_str(&login.id.expect("Login must contain user id")).unwrap();
         match user_service::authenticate_user(
             client,
-            Uuid::parse_str(&login.id.expect("Login must contain user id")).unwrap(),
+            &uuid,
             login.password.expect("Login must contain user password"),
         ).await {
             Ok(res) => Ok(
                 if res { 
-                    LoginPostResponse::Status200(models::LoginPost200Response{token: Some("use this Token, Luke!".to_string())}) }
+                    let secret = std::env::var("JWT_SECRET").unwrap();
+                    let secret = secret.as_bytes();
+                    let token = Some(auth::create_token(&uuid, secret).unwrap());
+                    LoginPostResponse::Status200(models::LoginPost200Response{token}) 
+                }
                 else {
                     LoginPostResponse::Status400    
                 }

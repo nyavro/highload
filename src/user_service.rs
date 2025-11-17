@@ -52,7 +52,7 @@ pub async fn register_user<'a>(client: Object, req: UserRegistration<'a>) -> Res
     }    
 }
 
-pub async fn authenticate_user(client: Object, id: Uuid, password: String) -> Result<bool, String> {
+pub async fn authenticate_user(client: Object, id: &Uuid, password: String) -> Result<bool, String> {
     let st = client.prepare_cached("SELECT pwd FROM users WHERE id=$1").await.unwrap();
     let res = client.query_one(&st, &[&id]).await.unwrap();
     let hash: String = res.get(0);    
