@@ -7,3 +7,17 @@ services:
       POSTGRES_PASSWORD: "pgpassword"
     ports:
       - "5432:5432"
+
+  openapi-generator:
+    image: openapitools/openapi-generator-cli
+    container_name: openapi-generator
+    entrypoint: >
+      sh -c "
+        rm -rf /local/api &&
+        openapi-generator generate
+        -i /local/openapi/openapi.json
+        -g rust-axum
+        -o /local/api
+      "
+    volumes:
+      - .:/local      
