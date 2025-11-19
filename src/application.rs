@@ -1,5 +1,5 @@
 use chrono::NaiveDate;
-use openapi::apis::default::{Default, UserRegisterPostResponse, LoginPostResponse, UserGetIdGetResponse};
+use openapi::apis::default::{Default, LoginPostResponse, UserGetIdGetResponse, UserRegisterPostResponse, UserSearchGetResponse};
 use openapi::apis::{ApiAuthBasic, BasicAuthKind, ErrorHandler};
 use axum_extra::extract::{CookieJar, Host};
 use axum::http::Method;
@@ -163,6 +163,21 @@ impl Default for Application {
                 },
                 None => UserRegisterPostResponse::Status400
             }            
+        )
+    }
+
+    async fn user_search_get(
+        &self,
+        _: &Method,
+        _host: &Host,
+        _: &CookieJar,
+        _: &Self::Claims,
+        _: &models::UserSearchGetQueryParams,        
+        ) -> Result<UserSearchGetResponse, ()> {
+        Ok(
+            UserSearchGetResponse::Status200(
+                vec!()
+            )
         )
     }
 }

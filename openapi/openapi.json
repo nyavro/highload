@@ -66,6 +66,14 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "first_name",
+                  "second_name", 
+                  "birthdate",
+                  "biography",
+                  "city",
+                  "password"
+                ],
                 "properties": {
                   "first_name": {
                     "type": "string",
@@ -159,6 +167,64 @@
           },
           "404": {
             "description": "Анкета не найдена"
+          },
+          "500": {
+            "$ref": "#/components/responses/5xx"
+          },
+          "503": {
+            "$ref": "#/components/responses/5xx"
+          }
+        }
+      }
+    },
+    "/user/search": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Поиск анкет",
+        "parameters": [
+          {
+            "name": "first_name",
+            "schema": {
+              "type": "string",
+              "description": "Часть имени для поиска",
+              "example": "Конст"
+            },
+            "in": "query",
+            "required": true,
+            "description": "Условие поиска по имени"
+          },
+          {
+            "name": "last_name",
+            "schema": {
+              "type": "string",
+              "description": "Часть фамилии для поиска",
+              "example": "Оси"
+            },
+            "in": "query",
+            "required": true,
+            "description": "Условие поиска по фамилии"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешные поиск пользователя",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Невалидные данные"
           },
           "500": {
             "$ref": "#/components/responses/5xx"
