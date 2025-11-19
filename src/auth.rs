@@ -17,8 +17,8 @@ pub fn create_token(user_id: &uuid::Uuid, secret: &[u8]) -> Result<String, jsonw
     encode(&Header::default(), &claims, &EncodingKey::from_secret(secret))
 }
 
-fn verify_token(token: &str, secret: &[u8]) -> Result<Claims, jsonwebtoken::errors::Error> {
-    let validation = Validation::new(Algorithm::HS256); 
-    let token_data = decode::<Claims>(token, &DecodingKey::from_secret(secret), &validation)?;
-    Ok(token_data.claims)
+pub fn verify_token(token: &str, secret: &[u8]) -> Result<Claims, jsonwebtoken::errors::Error> {
+    let validation = Validation::default();    
+    decode::<Claims>(token, &DecodingKey::from_secret(secret), &validation)
+        .map(|token_data| token_data.claims)        
 }

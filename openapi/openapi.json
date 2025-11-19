@@ -294,6 +294,14 @@
       },
       "User": {
         "type": "object",
+        "required": [
+          "first_name",
+          "second_name", 
+          "birthdate",
+          "biography",
+          "city",
+          "password"
+        ],
         "properties": {
           "id": {
             "$ref": "#/components/schemas/UserId"

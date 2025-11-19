@@ -14,11 +14,9 @@ mod password_hash;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    dotenv::from_filename(".env.secret").ok(); //JWT token secret
+    dotenv::from_filename(".env.secret").ok();    
     dotenv().ok();    
-    env_logger::init();    
-    let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set!");
-    info!("Secret: {}", jwt_secret);
+    env_logger::init();        
     let app_state = Arc::new(AppState::init().await);
     migrations::run_migrations(app_state.clone()).await;
     let app = openapi::server::new(Application::new (app_state));    

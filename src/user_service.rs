@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 use deadpool_postgres::{Object};
 use crate::password_hash;
 use uuid::Uuid;
@@ -15,6 +16,16 @@ pub struct UserRegistration<'a> {
 #[derive(Debug)]
 pub struct UserRegistrationResult {
     pub user_id: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct User {
+    pub id: Option<String>,            
+    pub first_name: String,
+    pub second_name: String,
+    pub birthdate: chrono::naive::NaiveDate,
+    pub biography: String,
+    pub city: String,
 }
 
 async fn check_if_user_exists(client: &Object, second_name: &String) -> Result<bool, String> {    
@@ -59,4 +70,45 @@ pub async fn authenticate_user(client: Object, id: &Uuid, password: String) -> R
     let res = client.query_one(&st, &[&id]).await.unwrap();
     let hash: String = res.get(0);    
     Ok(password_hash::check_password(password, hash))
+}
+
+pub async fn get_user_by_id(client: Object, id: Uuid) -> Result<User, String> {
+    let stmt = client.prepare_cached("SELECT first_name, second_name, birthdate, biography, city FROM users WHERE id=$1").await.unwrap();
+    let row = client.query_one(&stmt, &[&id]).await.unwrap();
+    let first_name: String = row.get(0);            
+    let second_name: String = row.get(1);            
+    let birthdate: NaiveDate = row.get(2);            
+    let biography: String = row.get(3);            
+    let city: String = row.get(4);   
+    Ok(
+        User{
+            id: Some(id.to_string()),
+            first_name,
+            second_name,
+            birthdate,
+            biography,
+            city
+        }
+    )
+}
+
+pub async fn search_by_first_and_last_name(client: Object, first_name: &String, last_name: &String) -> Vec<User> {
+    let stmt = client.prepare_cached(
+        "SELECT id, first_name, second_name, birthdate, biography, city FROM users WHERE (first_name IS NULL OR first_name LIKE $1) AND (second_name IS NULL OR second_name LIKE $2)"
+    ).await.unwrap();
+    let res = client.query(&stmt, &[&first_name, &last_name]).await.unwrap();
+    res
+        .into_iter()
+        .map(|row| {
+            let id: Option<uuid::Uuid> = row.get("id");
+            User {
+                id: id.map(|t| t.to_string()),
+                first_name: row.get("first_name"),
+                second_name: row.get("second_name"),
+                birthdate: row.get("birthdate"),
+                biography: row.get("biography"),
+                city: row.get("city"),
+            }
+        })
+        .collect()
 }
