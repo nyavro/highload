@@ -11,6 +11,7 @@ mod migrations;
 mod application;
 mod user_service;
 mod password_hash;
+// mod load_data;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -19,6 +20,7 @@ async fn main() -> Result<(), Error> {
     env_logger::init();        
     let app_state = Arc::new(AppState::init().await);
     migrations::run_migrations(app_state.clone()).await;
+    // load_data::run_load(app_state.clone()).await;
     let app = openapi::server::new(Application::new (app_state));    
     let port = 3000;
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await.unwrap();

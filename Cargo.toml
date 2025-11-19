@@ -32,3 +32,4 @@ jwt = "0.16.0"
 jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
 serde = "1.0.228"
 axum-jwt-auth = "0.6.2"
+csv = "1.4.0"

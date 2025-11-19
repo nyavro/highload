@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use crate::app_state::AppState;
-use log::{info};
+use log::info;
 
 mod embedded {
     refinery::embed_migrations!("migrations");
