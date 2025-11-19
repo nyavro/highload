@@ -1,4 +1,4 @@
-use log::{info};
+use log::info;
 use tokio_postgres::{Error};
 use dotenv::dotenv;
 use std::sync::Arc;

@@ -95,8 +95,8 @@ pub async fn get_user_by_id(client: Object, id: Uuid) -> Result<User, String> {
 pub async fn search_by_first_and_last_name(client: Object, first_name: &String, last_name: &String) -> Vec<User> {
     let stmt = client.prepare_cached(
         "SELECT id, first_name, second_name, birthdate, biography, city FROM users WHERE (first_name IS NULL OR first_name LIKE $1) AND (second_name IS NULL OR second_name LIKE $2)"
-    ).await.unwrap();
-    let res = client.query(&stmt, &[&first_name, &last_name]).await.unwrap();
+    ).await.unwrap();    
+    let res = client.query(&stmt, &[&format!("{}%", first_name), &format!("{}%", last_name)]).await.unwrap();
     res
         .into_iter()
         .map(|row| {
