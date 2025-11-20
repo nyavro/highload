@@ -6,6 +6,7 @@ use std::env;
 pub struct AppState {
     pub pool: Pool,
     pub secret: String,
+    pub jwt_token_ttl_minutes: i64
 }
 
 impl AppState {
@@ -21,7 +22,8 @@ impl AppState {
         pool.resize(10);
         AppState {
             pool,
-            secret: env::var("JWT_SECRET").unwrap()
+            secret: env::var("JWT_SECRET").unwrap(),
+            jwt_token_ttl_minutes: env::var("jwt_token_ttl_minutes").unwrap().parse().unwrap()
         }
     }
 }

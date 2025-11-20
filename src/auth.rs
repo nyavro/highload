@@ -8,10 +8,10 @@ pub struct Claims {
     exp: usize,  // expiration time
 }
 
-pub fn create_token(user_id: &uuid::Uuid, secret: &[u8]) -> Result<String, jsonwebtoken::errors::Error> {
+pub fn create_token(user_id: &uuid::Uuid, secret: &[u8], token_ttl: i64) -> Result<String, jsonwebtoken::errors::Error> {
     let claims = Claims {
         sub: user_id.to_owned(),
-        exp: (chrono::Utc::now() + chrono::Duration::minutes(1)).timestamp() as usize,
+        exp: (chrono::Utc::now() + chrono::Duration::minutes(token_ttl)).timestamp() as usize,
     };
 
     encode(&Header::default(), &claims, &EncodingKey::from_secret(secret))

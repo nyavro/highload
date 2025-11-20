@@ -26,7 +26,7 @@ pub async fn run_load(app_state: Arc<AppState>) {
                     &last.unwrap(),
                     &date,
                     &record.get(2).unwrap(),
-                    &""
+                    &"$argon2id$v=19$m=19456,t=2,p=1$ceguLp4Epue7eUDreYr16A$2jdgGIzB17jtFnlnZ/4wmkjbz/Avt5cea7Y9YYxH5sk"
                 ]).await
         );
     }

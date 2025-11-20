@@ -11,7 +11,7 @@ use uuid::Uuid;
 use crate::auth;
 use axum::response::IntoResponse;
 use axum::{http::{StatusCode}};
-use log::{info};
+use log::info;
 
 #[derive(Clone)]
 pub struct Application {
@@ -68,17 +68,17 @@ impl Default for Application {
         login: &Option<models::LoginPostRequest>
     ) -> Result<LoginPostResponse, ()> {
         let login = login.clone().expect("No login passed");        
-        let uuid = Uuid::parse_str(&login.id.expect("Login must contain user id")).unwrap();
+        let uuid = Uuid::parse_str(&login.id).unwrap();
         match user_service::authenticate_user(
             self.state.pool.get().await.unwrap(),
             &uuid,
-            login.password.expect("Login must contain user password"),
+            login.password,
         ).await {
             Ok(res) => Ok(
                 if res { 
                     let secret = std::env::var("JWT_SECRET").unwrap();
                     let secret = secret.as_bytes();
-                    let token = Some(auth::create_token(&uuid, secret).unwrap());
+                    let token = Some(auth::create_token(&uuid, secret, self.state.jwt_token_ttl_minutes).unwrap());
                     LoginPostResponse::Status200(models::LoginPost200Response{token}) 
                 }
                 else {

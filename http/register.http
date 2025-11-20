@@ -3,7 +3,10 @@ content-type: application/json
 accept: application/json
 
 {
-    "first_name": "ivand",
-    "second_name": "vanoasd",
-    "password": "secret2"
+    "first_name": "Евгений",    
+    "second_name": "Нявро",
+    "password": "secret",
+    "birthdate": "1990-01-01",
+    "biography": "bio bio",
+    "city": "Новосибирск"
 }
