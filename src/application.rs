@@ -122,7 +122,7 @@ impl Default for Application {
                         self.state.pool.get().await.unwrap(),
                         user_service::UserRegistration {
                             first_name: &req.first_name,
-                            second_name: &req.second_name,
+                            last_name: &req.last_name,
                             birthdate: &req.birthdate,
                             biography: &req.biography,
                             city: &req.city,
@@ -173,7 +173,7 @@ fn to_user_dto(user: user_service::User) -> User {
     User {
         id: user.id,
         first_name: user.first_name,
-        second_name: user.second_name,
+        last_name: user.last_name,
         birthdate: user.birthdate,
         biography: user.biography,
         city: user.city,

@@ -24,7 +24,7 @@ async fn main() -> Result<(), Error> {
     let app = openapi::server::new(Application::new (app_state));    
     let port = 3000;
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await.unwrap();
-    info!("Server is running on port {}", port);
+    info!("Server is running on port {} {}", port, port);
     axum::serve(listener, app).await.unwrap();
     Ok(())
 } 

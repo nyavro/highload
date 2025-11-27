@@ -6,7 +6,7 @@ use uuid::Uuid;
 #[derive(Debug)]
 pub struct UserRegistration<'a> {
     pub first_name: &'a String,
-    pub second_name: &'a String,
+    pub last_name: &'a String,
     pub birthdate: &'a chrono::naive::NaiveDate,
     pub biography: &'a String,
     pub city: &'a String,
@@ -22,35 +22,35 @@ pub struct UserRegistrationResult {
 pub struct User {
     pub id: Option<String>,            
     pub first_name: String,
-    pub second_name: String,
+    pub last_name: String,
     pub birthdate: chrono::naive::NaiveDate,
     pub biography: String,
     pub city: String,
 }
 
-async fn check_if_user_exists(client: &Object, second_name: &String) -> Result<bool, String> {    
-    let stmt = client.prepare_cached("SELECT 1 FROM users WHERE second_name=$1").await.unwrap();
-    let rows = client.query(&stmt, &[second_name]).await.unwrap();
+async fn check_if_user_exists(client: &Object, last_name: &String) -> Result<bool, String> {    
+    let stmt = client.prepare_cached("SELECT 1 FROM users WHERE last_name=$1").await.unwrap();
+    let rows = client.query(&stmt, &[last_name]).await.unwrap();
     if rows.is_empty() {
         Ok(true)
     } else {
-        Err("User with second name already exists".to_string())        
+        Err("User with last name already exists".to_string())        
     }   
 }
 
 pub async fn register_user<'a>(client: Object, req: UserRegistration<'a>) -> Result<UserRegistrationResult, String> {
-    let second_name = req.second_name.clone();    
-    match check_if_user_exists(&client, &second_name).await {
+    let last_name = req.last_name.clone();    
+    match check_if_user_exists(&client, &last_name).await {
         Ok(_) => {
             let (_salt, password_hash) = password_hash::hash_password(
                 req.password.clone()
             );
-            let statement = client.prepare_cached("INSERT INTO users (first_name, second_name, birthdate, biography, city, pwd) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id").await.unwrap();
+            let statement = client.prepare_cached("INSERT INTO users (first_name, last_name, birthdate, biography, city, pwd) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id").await.unwrap();
             let res = client.query_one(
                 &statement, 
                 &[
                     &req.first_name.clone(),
-                    &req.second_name.clone(),
+                    &req.last_name.clone(),
                     &req.birthdate,
                     &req.biography,
                     &req.city,
@@ -73,10 +73,10 @@ pub async fn authenticate_user(client: Object, id: &Uuid, password: String) -> R
 }
 
 pub async fn get_user_by_id(client: Object, id: Uuid) -> Result<User, String> {
-    let stmt = client.prepare_cached("SELECT first_name, second_name, birthdate, biography, city FROM users WHERE id=$1").await.unwrap();
+    let stmt = client.prepare_cached("SELECT first_name, last_name, birthdate, biography, city FROM users WHERE id=$1").await.unwrap();
     let row = client.query_one(&stmt, &[&id]).await.unwrap();
     let first_name: String = row.get(0);            
-    let second_name: String = row.get(1);            
+    let last_name: String = row.get(1);            
     let birthdate: NaiveDate = row.get(2);            
     let biography: String = row.get(3);            
     let city: String = row.get(4);   
@@ -84,7 +84,7 @@ pub async fn get_user_by_id(client: Object, id: Uuid) -> Result<User, String> {
         User{
             id: Some(id.to_string()),
             first_name,
-            second_name,
+            last_name,
             birthdate,
             biography,
             city
@@ -94,7 +94,7 @@ pub async fn get_user_by_id(client: Object, id: Uuid) -> Result<User, String> {
 
 pub async fn search_by_first_and_last_name(client: Object, first_name: &String, last_name: &String) -> Vec<User> {
     let stmt = client.prepare_cached(
-        "SELECT id, first_name, second_name, birthdate, biography, city FROM users WHERE (first_name IS NULL OR first_name LIKE $1) AND (second_name IS NULL OR second_name LIKE $2)"
+        "SELECT id, first_name, last_name, birthdate, biography, city FROM users WHERE (first_name LIKE $1) AND (last_name LIKE $2) ORDER BY id"
     ).await.unwrap();    
     let res = client.query(&stmt, &[&format!("{}%", first_name), &format!("{}%", last_name)]).await.unwrap();
     res
@@ -104,7 +104,7 @@ pub async fn search_by_first_and_last_name(client: Object, first_name: &String, 
             User {
                 id: id.map(|t| t.to_string()),
                 first_name: row.get("first_name"),
-                second_name: row.get("second_name"),
+                last_name: row.get("last_name"),
                 birthdate: row.get("birthdate"),
                 biography: row.get("biography"),
                 city: row.get("city"),

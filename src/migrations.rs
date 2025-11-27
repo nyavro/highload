@@ -3,7 +3,7 @@ use crate::app_state::AppState;
 use log::info;
 
 mod embedded {
-    refinery::embed_migrations!("migrations");
+    refinery::embed_migrations!("./migrations");
 }
 
 pub async fn run_migrations(app_state: Arc<AppState>) {

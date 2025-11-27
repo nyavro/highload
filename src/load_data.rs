@@ -11,8 +11,8 @@ pub async fn run_load(app_state: Arc<AppState>) {
     for result in rdr.records() {
         let record = result.unwrap();        
         let mut name = record.get(0).unwrap().split_whitespace();
-        let first = name.next();
         let last = name.next();
+        let first = name.next();
         let date = NaiveDate::parse_from_str(record.get(1).unwrap(), "%Y-%m-%d").unwrap();
         println!("{:?} {:?} {:?} {:?} {:?}", 
             first, 
