@@ -1,0 +1,34 @@
+-- No index
+EXPLAIN ANALYZE SELECT id, first_name, last_name, birthdate, biography, city FROM users WHERE (first_name LIKE 'Як%') AND (last_name LIKE 'Пя%') ORDER BY id;
+
+Sort  (cost=58039.19..58039.20 rows=1 width=77) (actual time=45.385..46.400 rows=0 loops=1)
+  Sort Key: id
+  Sort Method: quicksort  Memory: 25kB
+  ->  Gather  (cost=1000.00..58039.18 rows=1 width=77) (actual time=45.376..46.391 rows=0 loops=1)
+        Workers Planned: 2
+        Workers Launched: 2
+        ->  Parallel Seq Scan on users  (cost=0.00..57039.08 rows=1 width=77) (actual time=40.934..40.935 rows=0 loops=3)
+              Filter: (((first_name)::text ~~ 'Як%'::text) AND ((last_name)::text ~~ 'Пя%'::text))
+              Rows Removed by Filter: 333338
+Planning Time: 0.401 ms
+Execution Time: 46.438 ms
+
+
+-- With indexes
+-- CREATE INDEX users_first_name_trgm ON users USING gin (first_name gin_trgm_ops);
+-- CREATE INDEX users_last_name_trgm ON users USING gin (last_name gin_trgm_ops); 
+
+EXPLAIN ANALYZE SELECT id, first_name, last_name, birthdate, biography, city FROM users WHERE (first_name LIKE 'Як%') AND (last_name LIKE 'Пя%') ORDER BY id;
+
+Sort  (cost=80.96..80.96 rows=1 width=77) (actual time=0.041..0.041 rows=0 loops=1)
+  Sort Key: id
+  Sort Method: quicksort  Memory: 25kB
+  ->  Bitmap Heap Scan on users  (cost=76.93..80.95 rows=1 width=77) (actual time=0.038..0.038 rows=0 loops=1)
+        Recheck Cond: (((last_name)::text ~~ 'Пя%'::text) AND ((first_name)::text ~~ 'Як%'::text))
+        ->  BitmapAnd  (cost=76.93..76.93 rows=1 width=0) (actual time=0.037..0.038 rows=0 loops=1)
+              ->  Bitmap Index Scan on users_last_name_trgm  (cost=0.00..28.47 rows=63 width=0) (actual time=0.037..0.037 rows=0 loops=1)
+                    Index Cond: ((last_name)::text ~~ 'Пя%'::text)
+              ->  Bitmap Index Scan on users_first_name_trgm  (cost=0.00..48.21 rows=562 width=0) (never executed)
+                    Index Cond: ((first_name)::text ~~ 'Як%'::text)
+Planning Time: 0.099 ms
+Execution Time: 0.058 ms
