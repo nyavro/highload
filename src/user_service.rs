@@ -24,7 +24,7 @@ pub struct User {
     pub first_name: String,
     pub last_name: String,
     pub birthdate: chrono::naive::NaiveDate,
-    pub biography: String,
+    pub biography: Option<String>,
     pub city: String,
 }
 
@@ -78,7 +78,7 @@ pub async fn get_user_by_id(client: Object, id: Uuid) -> Result<User, String> {
     let first_name: String = row.get(0);            
     let last_name: String = row.get(1);            
     let birthdate: NaiveDate = row.get(2);            
-    let biography: String = row.get(3);            
+    let biography: Option<String> = row.get(3);            
     let city: String = row.get(4);   
     Ok(
         User{

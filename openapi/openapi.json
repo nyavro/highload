@@ -301,8 +301,7 @@
         "required": [
           "first_name",
           "last_name", 
-          "birthdate",
-          "biography",
+          "birthdate",          
           "city",
           "password"
         ],
