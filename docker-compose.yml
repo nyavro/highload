@@ -1,17 +1,19 @@
 services:
-  postgres-master:    
+  postgres-master:
     image: postgres:13.3
     container_name: postgres-master
     environment:
       POSTGRES_DB: "highload"
       POSTGRES_USER: "pguser"
       POSTGRES_PASSWORD: "pgpassword"
-      PG_REPLICA_SLOTS: "replica_slot1,replica_slot2" 
+      PG_REPLICA_SLOTS: "replica_slot1,replica_slot2"
     ports:
       - "5432:5432"
     volumes:
       - postgres-master-data:/var/lib/postgresql/data
-      - ./db-config/init-master.sh:/docker-entrypoint-initdb.d/init-master.sh    
+      - ./db-config/init-master.sh:/docker-entrypoint-initdb.d/init-master.sh
+      - ./db-config/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db-config/data/people.v2.csv:/docker-entrypoint-initdb.d/data.csv
 
   postgres-replica-1:
     image: postgres:13.3
@@ -26,10 +28,10 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - postgres-replica-1-data:/var/lib/postgresql/data      
+      - postgres-replica-1-data:/var/lib/postgresql/data
       - ./db-config/init-replica.sh:/usr/local/bin/init-and-run-replica.sh
     depends_on:
-      - postgres-master    
+      - postgres-master
     command: ["/usr/local/bin/init-and-run-replica.sh"]
   postgres-replica-2:
     image: postgres:13.3
@@ -44,11 +46,11 @@ services:
     ports:
       - "5434:5432"
     volumes:
-      - postgres-replica-2-data:/var/lib/postgresql/data      
+      - postgres-replica-2-data:/var/lib/postgresql/data
       - ./db-config/init-replica.sh:/usr/local/bin/init-and-run-replica.sh
     depends_on:
-      - postgres-master    
-    command: ["/usr/local/bin/init-and-run-replica.sh"]    
+      - postgres-master
+    command: ["/usr/local/bin/init-and-run-replica.sh"]
 
 volumes:
   postgres-master-data:
