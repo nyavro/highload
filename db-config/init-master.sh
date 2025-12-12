@@ -20,5 +20,6 @@ echo "...done initializing replication slots"
 echo "listen_addresses = '*'" >> /var/lib/postgresql/data/postgresql.conf
 
 echo 'host replication replicator all md5' >> /var/lib/postgresql/data/pg_hba.conf
+echo 'host all         all        0.0.0.0/0 md5' >> /var/lib/postgresql/data/pg_hba.conf
 echo "Master setup complete."
 
