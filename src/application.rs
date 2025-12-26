@@ -70,7 +70,7 @@ impl Default for Application {
         let login = login.clone().expect("No login passed");        
         let uuid = Uuid::parse_str(&login.id).unwrap();
         match user_service::authenticate_user(
-            self.state.pool.get().await.unwrap(),
+            self.state.get_master_client().await,
             &uuid,
             login.password,
         ).await {
@@ -100,7 +100,7 @@ impl Default for Application {
         path_params: &models::UserGetIdGetPathParams
     ) -> Result<UserGetIdGetResponse, ()> {
         let user = user_service::get_user_by_id(
-            self.state.pool.get().await.unwrap(), 
+            self.state.get_replica_client().await, 
             Uuid::parse_str(&path_params.id).unwrap()
         ).await.unwrap();        
         Ok(
@@ -119,7 +119,7 @@ impl Default for Application {
             match user_registration_request {                
                 Some(req) => {                    
                     let res = user_service::register_user(
-                        self.state.pool.get().await.unwrap(),
+                        self.state.get_master_client().await,
                         user_service::UserRegistration {
                             first_name: &req.first_name,
                             last_name: &req.last_name,
@@ -155,7 +155,7 @@ impl Default for Application {
             UserSearchGetResponse::Status200(
                 to_user_dtos(
                     user_service::search_by_first_and_last_name(
-                        self.state.pool.get().await.unwrap(), 
+                        self.state.get_replica_client().await, 
                         &search_request.first_name, 
                         &search_request.last_name
                     ).await
