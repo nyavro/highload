@@ -28,9 +28,8 @@ pub struct User {
     pub city: String,
 }
 
-async fn check_if_user_exists(client: &Object, last_name: &String) -> Result<bool, String> {    
-    let stmt = client.prepare_cached("SELECT 1 FROM users WHERE last_name=$1").await.unwrap();
-    let rows = client.query(&stmt, &[last_name]).await.unwrap();
+async fn check_if_user_exists(client: &Object, last_name: &String) -> Result<bool, String> {        
+    let rows = client.query("SELECT 1 FROM users WHERE last_name=$1", &[last_name]).await.unwrap();
     if rows.is_empty() {
         Ok(true)
     } else {
@@ -44,10 +43,9 @@ pub async fn register_user<'a>(client: Object, req: UserRegistration<'a>) -> Res
         Ok(_) => {
             let (_salt, password_hash) = password_hash::hash_password(
                 req.password.clone()
-            );
-            let statement = client.prepare_cached("INSERT INTO users (first_name, last_name, birthdate, biography, city, pwd) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id").await.unwrap();
+            );            
             let res = client.query_one(
-                &statement, 
+                "INSERT INTO users (first_name, last_name, birthdate, biography, city, pwd) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id", 
                 &[
                     &req.first_name.clone(),
                     &req.last_name.clone(),
@@ -65,16 +63,14 @@ pub async fn register_user<'a>(client: Object, req: UserRegistration<'a>) -> Res
     }    
 }
 
-pub async fn authenticate_user(client: Object, id: &Uuid, password: String) -> Result<bool, String> {
-    let st = client.prepare_cached("SELECT pwd FROM users WHERE id=$1").await.unwrap();
-    let res = client.query_one(&st, &[&id]).await.unwrap();
+pub async fn authenticate_user(client: Object, id: &Uuid, password: String) -> Result<bool, String> {    
+    let res = client.query_one("SELECT pwd FROM users WHERE id=$1", &[&id]).await.unwrap();
     let hash: String = res.get(0);    
     Ok(password_hash::check_password(password, hash))
 }
 
-pub async fn get_user_by_id(client: Object, id: Uuid) -> Result<User, String> {
-    let stmt = client.prepare_cached("SELECT first_name, last_name, birthdate, biography, city FROM users WHERE id=$1").await.unwrap();
-    let row = client.query_one(&stmt, &[&id]).await.unwrap();
+pub async fn get_user_by_id(client: Object, id: Uuid) -> Result<User, String> {    
+    let row = client.query_one("SELECT first_name, last_name, birthdate, biography, city FROM users WHERE id=$1", &[&id]).await.unwrap();
     let first_name: String = row.get(0);            
     let last_name: String = row.get(1);            
     let birthdate: NaiveDate = row.get(2);            
@@ -92,11 +88,8 @@ pub async fn get_user_by_id(client: Object, id: Uuid) -> Result<User, String> {
     )
 }
 
-pub async fn search_by_first_and_last_name(client: Object, first_name: &String, last_name: &String) -> Vec<User> {
-    let stmt = client.prepare_cached(
-        "SELECT id, first_name, last_name, birthdate, biography, city FROM users WHERE (first_name LIKE $1) AND (last_name LIKE $2) ORDER BY id"
-    ).await.unwrap();    
-    let res = client.query(&stmt, &[&format!("{}%", first_name), &format!("{}%", last_name)]).await.unwrap();
+pub async fn search_by_first_and_last_name(client: Object, first_name: &String, last_name: &String) -> Vec<User> {    
+    let res = client.query("SELECT id, first_name, last_name, birthdate, biography, city FROM users WHERE (first_name LIKE $1) AND (last_name LIKE $2) ORDER BY id", &[&format!("{}%", first_name), &format!("{}%", last_name)]).await.unwrap();
     res
         .into_iter()
         .map(|row| {

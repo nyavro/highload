@@ -14,6 +14,11 @@ services:
       - ./db-config/init-master.sh:/docker-entrypoint-initdb.d/init-master.sh
       - ./db-config/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./db-config/data/people.v2.csv:/docker-entrypoint-initdb.d/data.csv
+    deploy:
+      resources:
+        limits: 
+          cpus: '0.8'  
+          memory: '100M'
 
   postgres-replica-1:
     image: postgres:13.3
@@ -30,6 +35,11 @@ services:
     volumes:
       - postgres-replica-1-data:/var/lib/postgresql/data
       - ./db-config/init-replica.sh:/usr/local/bin/init-and-run-replica.sh
+    deploy:
+      resources:
+        limits: 
+          cpus: '0.8'  
+          memory: '100M'
     depends_on:
       - postgres-master
     command: ["/usr/local/bin/init-and-run-replica.sh"]
@@ -48,6 +58,11 @@ services:
     volumes:
       - postgres-replica-2-data:/var/lib/postgresql/data
       - ./db-config/init-replica.sh:/usr/local/bin/init-and-run-replica.sh
+    deploy:
+      resources:
+        limits: 
+          cpus: '0.8'  
+          memory: '100M'
     depends_on:
       - postgres-master
     command: ["/usr/local/bin/init-and-run-replica.sh"]
@@ -64,6 +79,8 @@ services:
       PGPOOL_PARAMS_PORT: 5432
       PGPOOL_PARAMS_PCP_PORT: 9898
       PGPOOL_PARAMS_ENABLE_LOAD_BALANCING: 'on'
+      PGPOOL_PARAMS_LOAD_BALANCE_MODE: 'on'
+      PGPOOL_PARAMS_STATEMENT_LEVEL_LOAD_BALANCE: 'on'
       PGPOOL_PARAMS_REPLICATION_MODE: 'streaming'
       PGPOOL_PARAMS_SR_CHECK_USER: 'pguser'
       PGPOOL_PARAMS_SR_CHECK_PASSWORD: 'pgpassword'
@@ -72,6 +89,12 @@ services:
       PGPOOL_PARAMS_ENABLE_POOL_HBA: 'on'
       PGPOOL_PARAMS_POOL_PASSWD: '/usr/local/etc/pool_passwd'
       PGPOOL_PARAMS_AUTHENTICATION_METHOD: 'scram-sha-256'      
+      PGPOOL_PARAMS_DELAY_THRESHOLD: 0
+      PGPOOL_PARAMS_LOG_STATEMENT: 'on'
+      PGPOOL_PARAMS_LOG_PER_NODE_STATEMENT: 'on'
+      PGPOOL_PARAMS_LOG_CONNECTIONS: 'on'
+      PGPOOL_PARAMS_LOG_MIN_MESSAGES: 'info'
+      PGPOOL_PARAMS_FAILOVER_COMMAND: '/usr/local/bin/failover.sh %d %h'
 
       PGPOOL_PARAMS_BACKEND_HOSTNAME0: 'postgres-master'
       PGPOOL_PARAMS_BACKEND_PORT0: 5432
@@ -89,9 +112,10 @@ services:
       PGPOOL_PARAMS_BACKEND_PORT2: 5432
       PGPOOL_PARAMS_BACKEND_WEIGHT2: 1
       PGPOOL_PARAMS_BACKEND_DATA_DIRECTORY2: '/var/lib/postgresql/data'
-      PGPOOL_PARAMS_BACKEND_FLAG2: 'ALLOW_TO_FAILOVER'      
+      PGPOOL_PARAMS_BACKEND_FLAG2: 'ALLOW_TO_FAILOVER'            
     volumes:
     - ./db-config/pool_passwd:/usr/local/etc/pool_passwd  
+    - ./db-config/failover.sh:/usr/local/bin/failover.sh    
     depends_on:
       - postgres-master
       - postgres-replica-1

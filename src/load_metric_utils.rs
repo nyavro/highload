@@ -5,7 +5,7 @@ use deadpool_postgres::{Object};
 
 pub async fn generate_load_data(app_state: Arc<AppState>) {
     let target_dir = "load-testing";
-    let client = app_state.pool.get().await.unwrap();
+    let client = app_state.get_master_client().await;
     generate_user_ids_csv(&client, &target_dir).await;
     generate_firstname_prefixes_csv(&client, &target_dir).await;
     generate_lastname_prefixes_csv(&client, &target_dir).await;    
