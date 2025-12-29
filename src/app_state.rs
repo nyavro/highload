@@ -8,7 +8,7 @@ pub struct AppState {
     master_pool: Pool,
     replica_pools: Vec<Pool>,
     pub secret: String,
-    pub jwt_token_ttl_minutes: i64
+    pub jwt_token_ttl_minutes: i64,    
 }
 
 fn init_config(port_key: &str) -> Config {

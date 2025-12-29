@@ -1,0 +1,8 @@
+POST http://localhost:3000/post/create
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiZWU2MDQ2NTEtMTRlNS00ZWE0LTkwZDgtMjdlNTU4NzBmYjA0IiwiZXhwIjoxNzY3MDc5NjIxfQ.DHRYHzRlv23ICuOyh_ikcrHIkPrVOLpvXdkYyF5bLhQ
+content-type: application/json
+accept: application/json
+
+{    
+    "text": "Hey all!"
+}

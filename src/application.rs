@@ -1,19 +1,16 @@
-use openapi::apis::default::{Default, LoginPostResponse, UserGetIdGetResponse, UserRegisterPostResponse, UserSearchGetResponse, FriendSetUserIdPutResponse, FriendDeleteUserIdPutResponse};
+use openapi::apis::default::{Default, LoginPostResponse, UserGetIdGetResponse, UserRegisterPostResponse, UserSearchGetResponse, FriendSetUserIdPutResponse, FriendDeleteUserIdPutResponse, PostCreatePostResponse};
 use openapi::apis::{ApiAuthBasic, BasicAuthKind, ErrorHandler};
 use axum_extra::extract::{CookieJar, Host};
 use axum::http::Method;
 use async_trait::async_trait; 
 use openapi::models::{self, User};
-use std::panic::PanicHookInfo;
 use std::sync::Arc;
 use crate::app_state::AppState;
 use crate::user_service;
 use crate::friend_service;
+use crate::post_service;
 use uuid::Uuid;
 use crate::auth;
-use axum::response::IntoResponse;
-use axum::{http::{StatusCode}};
-use log::info;
 
 #[derive(Clone)]
 pub struct Application {
@@ -30,22 +27,10 @@ impl AsRef<Application> for Application {
 impl ApiAuthBasic for Application {
     type Claims = auth::Claims;
     async fn extract_claims_from_auth_header(&self, _kind: BasicAuthKind, headers: &axum::http::header::HeaderMap, _key: &str) -> Option<Self::Claims> {                                
-        let token = headers.get("Authorization")
-            .and_then(|value| value.to_str().ok())
-            .ok_or_else(|| {(StatusCode::UNAUTHORIZED, "Missing or invalid Authorization header").into_response()}).ok()
-            .and_then(|value| value.strip_prefix("Bearer "))                
-            .ok_or_else(|| {
-                (StatusCode::UNAUTHORIZED, "Invalid authorization scheme, expected Bearer").into_response()
-            })
-            .unwrap();
-        info!("{:?}", token);        
-        Some(
-            auth::verify_token(token, &self.state.secret.as_bytes())
-                .map_err(|_| {
-                    (StatusCode::UNAUTHORIZED, "Invalid or expired token").into_response()
-                })
-                .unwrap()
-        )
+        let auth_header = headers.get(axum::http::header::AUTHORIZATION)?;
+        let auth_str = auth_header.to_str().ok()?;
+        let token = auth_str.strip_prefix("Bearer ")?;
+        auth::verify_token(token, &self.state.secret.as_bytes()).ok()
     }
 }
 
@@ -69,25 +54,22 @@ impl Default for Application {
         _: &CookieJar,
         login: &Option<models::LoginPostRequest>
     ) -> Result<LoginPostResponse, ()> {
-        let login = login.clone().expect("No login passed");        
-        let uuid = Uuid::parse_str(&login.id).unwrap();
+        let login_data = login.as_ref().ok_or(())?;        
+        let uuid = match Uuid::parse_str(&login_data.id) {
+            Ok(id) => id,
+            Err(_) => return Ok(LoginPostResponse::Status400)
+        };
         match user_service::authenticate_user(
             self.state.get_master_client().await,
             &uuid,
-            login.password,
+            &login_data.password,
         ).await {
-            Ok(res) => Ok(
-                if res { 
-                    let secret = std::env::var("JWT_SECRET").unwrap();
-                    let secret = secret.as_bytes();
-                    let token = Some(auth::create_token(&uuid, secret, self.state.jwt_token_ttl_minutes).unwrap());
-                    LoginPostResponse::Status200(models::LoginPost200Response{token}) 
-                }
-                else {
-                    LoginPostResponse::Status400    
-                }
-            ),
-            Err(_) => Ok(
+            Ok(true) => 
+                match auth::create_token(&uuid, self.state.secret.as_bytes(), self.state.jwt_token_ttl_minutes) {
+                    Ok(token) => Ok(LoginPostResponse::Status200(models::LoginPost200Response{token: Some(token)})),
+                    Err(_) => Ok(LoginPostResponse::Status400)
+                },
+            _ => Ok(
                 LoginPostResponse::Status400
             )
         }        
@@ -101,13 +83,17 @@ impl Default for Application {
         _: &Self::Claims,
         path_params: &models::UserGetIdGetPathParams
     ) -> Result<UserGetIdGetResponse, ()> {
-        let user = user_service::get_user_by_id(
+        let uuid = match Uuid::parse_str(&path_params.id) {
+            Ok(id) => id,
+            Err(_) => return Ok(UserGetIdGetResponse::Status400)
+        };
+        match user_service::get_user_by_id(
             self.state.get_replica_client().await, 
-            Uuid::parse_str(&path_params.id).unwrap()
-        ).await.unwrap();        
-        Ok(
-            UserGetIdGetResponse::Status200(to_user_dto(user))
-        )
+            uuid
+        ).await {
+            Ok(user) => Ok(UserGetIdGetResponse::Status200(to_user_dto(user))),
+            Err(_) => Ok(UserGetIdGetResponse::Status400)
+        }        
     }
 
     async fn user_register_post(
@@ -134,7 +120,7 @@ impl Default for Application {
                     match res {
                         Ok(r) => UserRegisterPostResponse::Status200(
                             models::UserRegisterPost200Response {
-                                user_id: r.user_id
+                                user_id: r.user_id.map(|t| t.to_string())
                                 }
                             ),
                         Err(_) => UserRegisterPostResponse::Status400
@@ -174,10 +160,14 @@ impl Default for Application {
         claims: &Self::Claims,
         path_params: &models::FriendSetUserIdPutPathParams,
     ) -> Result<FriendSetUserIdPutResponse, ()> {
+        let uuid = match Uuid::parse_str(&path_params.user_id) {
+            Ok(id) => id,
+            Err(_) => return Ok(FriendSetUserIdPutResponse::Status400)
+        };
         match friend_service::add_friend(
             self.state.get_master_client().await, 
             claims.user_id, 
-            Uuid::parse_str(&path_params.user_id).unwrap()
+            uuid
         ).await {
             Ok(friend_service::FriendshipCreateResult::Accepted) => Ok(FriendSetUserIdPutResponse::Status200),
             Ok(friend_service::FriendshipCreateResult::RequestSent) => Ok(FriendSetUserIdPutResponse::Status200),
@@ -204,10 +194,14 @@ impl Default for Application {
         claims: &Self::Claims,
       path_params: &models::FriendDeleteUserIdPutPathParams,
     ) -> Result<FriendDeleteUserIdPutResponse, ()> {
+        let cur_user_id = match Uuid::parse_str(&path_params.user_id) {
+            Ok(id) => id,
+            Err(_) => return Ok(FriendDeleteUserIdPutResponse::Status400)
+        };        
         match friend_service::delete_friend(
             self.state.get_master_client().await, 
             claims.user_id, 
-            Uuid::parse_str(&path_params.user_id).unwrap(),
+            cur_user_id,
             false
         ).await {
             Ok(friend_service::FriendshipEndResult::Subscribed) => Ok(FriendDeleteUserIdPutResponse::Status200),
@@ -224,6 +218,35 @@ impl Default for Application {
                     retry_after: None,
                 })
             }
+        }
+    }
+
+    async fn post_create_post(
+        &self,
+        _: &Method,
+        _: &Host,
+        _: &CookieJar,
+        claims: &Self::Claims,
+        body: &Option<models::PostCreatePostRequest>,
+    ) -> Result<PostCreatePostResponse, ()> {
+        match body {
+            Some(post) => {
+                match post_service::create(self.state.get_master_client().await, claims.user_id, &post.text).await {
+                    Ok(post_id) => Ok(PostCreatePostResponse::Status200(post_id.to_string())),
+                    Err(e) => {
+                        log::error!("Friendship end error: {:?}", e);
+                        Ok(PostCreatePostResponse::Status500 {
+                            body: models::LoginPost500Response { 
+                                message: "Internal Server Error".to_string(),
+                                request_id: None,
+                                code: None
+                            },
+                            retry_after: None,
+                        })
+                    }
+                }                
+            },
+            None => Ok(PostCreatePostResponse::Status400)
         }
     }
 }

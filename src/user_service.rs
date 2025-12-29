@@ -15,7 +15,7 @@ pub struct UserRegistration<'a> {
 
 #[derive(Debug)]
 pub struct UserRegistrationResult {
-    pub user_id: Option<String>,
+    pub user_id: Option<uuid::Uuid>,
 }
 
 #[derive(Debug)]
@@ -56,14 +56,14 @@ pub async fn register_user<'a>(client: Object, req: UserRegistration<'a>) -> Res
                 ]).await.unwrap();
             let id: Uuid = res.get(0);
             Ok(UserRegistrationResult {
-                user_id: Some(id.to_string())
+                user_id: Some(id)
             })
         },
         Err(e) => Err(e)
     }    
 }
 
-pub async fn authenticate_user(client: Object, id: &Uuid, password: String) -> Result<bool, String> {    
+pub async fn authenticate_user(client: Object, id: &Uuid, password: &String) -> Result<bool, String> {    
     let res = client.query_one("SELECT pwd FROM users WHERE id=$1", &[&id]).await.unwrap();
     let hash: String = res.get(0);    
     Ok(password_hash::check_password(password, hash))
