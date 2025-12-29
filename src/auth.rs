@@ -4,13 +4,13 @@ use jsonwebtoken::{encode, decode, Header, EncodingKey, DecodingKey, Validation}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    sub: uuid::Uuid, // user ID
+    pub user_id: uuid::Uuid, // user ID
     exp: usize,  // expiration time
 }
 
 pub fn create_token(user_id: &uuid::Uuid, secret: &[u8], token_ttl: i64) -> Result<String, jsonwebtoken::errors::Error> {
     let claims = Claims {
-        sub: user_id.to_owned(),
+        user_id: user_id.to_owned(),
         exp: (chrono::Utc::now() + chrono::Duration::minutes(token_ttl)).timestamp() as usize,
     };
 

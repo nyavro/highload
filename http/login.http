@@ -3,6 +3,6 @@ content-type: application/json
 accept: application/json
 
 {
-    "id": "3bb34cee-a28b-4b33-a35e-5e2d008fb2f4",
-    "password": "secret2"
+    "id": "ee604651-14e5-4ea4-90d8-27e55870fb04",
+    "password": "secret"
 }

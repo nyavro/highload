@@ -10,6 +10,7 @@ mod app_state;
 mod migrations;
 mod application;
 mod user_service;
+mod friend_service;
 mod password_hash;
 mod load_metric_utils;
 

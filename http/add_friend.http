@@ -1,0 +1,5 @@
+PUT http://localhost:3000/friend/set/efe1189a-9935-48d2-9c15-7555b7b36949
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiZWU2MDQ2NTEtMTRlNS00ZWE0LTkwZDgtMjdlNTU4NzBmYjA0IiwiZXhwIjoxNzY3MDA0NDE3fQ.Dge4NQvDWv9ogENNHa3KYaQGogBy8RD8r8A5jIWZ_pE
+content-type: application/json
+accept: application/json
+

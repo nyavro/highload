@@ -1293,6 +1293,7 @@ dependencies = [
  "refinery",
  "serde",
  "sqlx",
+ "thiserror",
  "tokio",
  "tokio-postgres",
  "uuid",
