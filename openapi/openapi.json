@@ -7,6 +7,7 @@
   "paths": {
     "/login": {
       "post": {
+        "tags": ["auth"],
         "description": "Упрощенный процесс аутентификации путем передачи идентификатор пользователя и получения токена для дальнейшего прохождения авторизации",
         "requestBody": {
           "content": {
@@ -64,6 +65,7 @@
     },
     "/user/register": {
       "post": {
+        "tags": ["user"],
         "description": "Регистрация нового пользователя",
         "requestBody": {
           "content": {
@@ -138,6 +140,7 @@
     },
     "/user/get/{id}": {
       "get": {
+        "tags": ["user"],
         "security": [
           {
             "bearerAuth": []
@@ -183,6 +186,7 @@
     },
     "/user/search": {
       "get": {
+        "tags": ["user"],
         "security": [
           {
             "bearerAuth": []
@@ -241,6 +245,7 @@
     },
     "/friend/set/{user_id}": {
       "put": {
+        "tags": ["friend"],
         "security": [
           {
             "bearerAuth": []
@@ -275,8 +280,9 @@
         }
       }
     },
-    "/friend/delete/{user_id}": {
+    "/friend/delete/{user_id}": {      
       "put": {
+        "tags": ["friend"],
         "security": [
           {
             "bearerAuth": []
@@ -311,8 +317,9 @@
         }
       }
     },
-    "/post/create": {
+    "/post/create": {      
       "post": {
+        "tags": ["post"],
         "security": [
           {
             "bearerAuth": []

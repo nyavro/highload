@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use deadpool_postgres::{Object};
-use crate::password_hash;
 use uuid::Uuid;
+use crate::modules::auth::password_hash;
 
 #[derive(Debug)]
 pub struct UserRegistration<'a> {
@@ -61,12 +61,6 @@ pub async fn register_user<'a>(client: Object, req: UserRegistration<'a>) -> Res
         },
         Err(e) => Err(e)
     }    
-}
-
-pub async fn authenticate_user(client: Object, id: &Uuid, password: &String) -> Result<bool, String> {    
-    let res = client.query_one("SELECT pwd FROM users WHERE id=$1", &[&id]).await.unwrap();
-    let hash: String = res.get(0);    
-    Ok(password_hash::check_password(password, hash))
 }
 
 pub async fn get_user_by_id(client: Object, id: Uuid) -> Result<User, String> {    
