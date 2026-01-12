@@ -28,7 +28,7 @@ pub enum FriendshipEndResult {
 pub async fn add_friend(mut client: Object, initiator_user_id: Uuid, user_id: Uuid) -> Result<FriendshipCreateResult, FriendServiceError> {         
     let tx = client.transaction().await?;
     let rows_affected = tx.execute(
-    "UPDATE friends SET status = 'accepted', updated_at = NOW() WHERE initiator_id = $1 AND friend_id = $2 AND status = 'pending'",
+    "UPDATE friends SET status = 'accepted', updated_at = NOW() WHERE initiator_id = $2 AND friend_id = $1 AND status = 'pending'",
     &[&user_id, &initiator_user_id]
     ).await?;
     if rows_affected > 0 {    
@@ -39,7 +39,7 @@ pub async fn add_friend(mut client: Object, initiator_user_id: Uuid, user_id: Uu
         "INSERT INTO friends (initiator_id, friend_id, status)
         VALUES ($1, $2, 'pending')
         ON CONFLICT (initiator_id, friend_id) DO NOTHING",
-        &[&user_id, &initiator_user_id]
+        &[&initiator_user_id, &user_id]
     ).await?;
     tx.commit().await?;
     if insert_res > 0 {

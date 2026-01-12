@@ -64,3 +64,18 @@ pub async fn get(client: Object, post_id: Uuid) -> Result<Post, PostServiceError
     let author_user_id: Uuid = res.get(1);    
     Ok(Post {id: post_id, text, author_user_id})
 }
+
+pub async fn feed(client: Object, post_id: Uuid, limit: i64, offset: i64) -> Result<Vec<Post>, PostServiceError> {
+    let res = client.query(
+        "SELECT p.id, p.text, p.user_id FROM posts p WHERE id=$1", 
+        &[&post_id]
+    ).await?;        
+    Ok(
+        res.iter().map(|row| {
+            let text: String = row.get(0);    
+            let author_user_id: Uuid = row.get(1);    
+            let id: Uuid = row.get(2);
+            Post {id, text, author_user_id}
+        }).collect()
+    )    
+}

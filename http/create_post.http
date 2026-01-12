@@ -1,8 +1,8 @@
 POST http://localhost:3000/post
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiZWU2MDQ2NTEtMTRlNS00ZWE0LTkwZDgtMjdlNTU4NzBmYjA0IiwiZXhwIjoxNzY4MjA1MjgyfQ.qPqrPtOt_mRys12jWznXwjvltGy5hhlMApsY0Fb6plg
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiOGUxYzY1ODItNWJhZi00ZTE0LTg2M2YtODY4MjlkNTI2N2Q0IiwiZXhwIjoxNzY4MjEyMTEzfQ.tT1XhjYOc4KFDUX2z3gdsUAL7abLljH7mftQngIDMYA
 content-type: application/json
 accept: application/json
 
 {    
-    "text": "Hey all! 123"
+    "text": "Hey all! I'm friend number one! 3"
 }

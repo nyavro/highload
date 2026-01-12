@@ -1,4 +1,4 @@
-use openapi::apis::post::{Post, PostPostResponse, PostIdGetResponse, PostPutResponse, PostIdDeleteResponse};
+use openapi::apis::post::{Post, PostPostResponse, PostIdGetResponse, PostPutResponse, PostIdDeleteResponse, PostFeedGetResponse};
 use axum_extra::extract::{CookieJar, Host};
 use axum::http::Method;
 use async_trait::async_trait; 
@@ -52,7 +52,7 @@ impl Post for Application {
             Ok(id) => id,
             Err(_) => return Ok(PostIdGetResponse::Status400)
         };
-        match post_service::get(self.state.get_master_client().await, post_id).await {
+        match post_service::get(self.state.get_replica_client().await, post_id).await {
             Ok(post) => Ok(PostIdGetResponse::Status200(to_post_dto(post))),
             Err(e) => {
                 log::error!("Get post error: {:?}", e);
@@ -128,6 +128,32 @@ impl Post for Application {
             }
         }  
     }
+
+    async fn post_feed_get(
+        &self,    
+        _: &Method,
+        _: &Host,
+        _: &CookieJar,
+        claims: &Self::Claims,
+        query_params: &models::PostFeedGetQueryParams,
+    ) -> Result<PostFeedGetResponse, ()> {
+        let limit = query_params.limit.ok_or(())?;
+        let offset = query_params.offset.ok_or(())?;
+        match post_service::feed(self.state.get_master_client().await, claims.user_id, limit, offset).await {
+            Ok(posts) => Ok(PostFeedGetResponse::Status200(to_post_dtos(posts))),
+            Err(e) => {
+                log::error!("Feed posts error: {:?}", e);
+                Ok(PostFeedGetResponse::Status500 {
+                    body: models::LoginPost500Response {
+                        message: "Internal Server Error".to_string(),
+                        request_id: None,
+                        code: None
+                    },
+                    retry_after: None,
+                })
+            }
+        }
+    }
 }
 
 fn to_post_dto(post: post_service::Post) -> openapi::models::Post {
@@ -136,4 +162,8 @@ fn to_post_dto(post: post_service::Post) -> openapi::models::Post {
         text: post.text,
         author_user_id: post.author_user_id.to_string()
     }    
+}
+
+fn to_post_dtos(posts: Vec<post_service::Post>) -> Vec<openapi::models::Post> {
+    posts.into_iter().map(to_post_dto).collect()
 }
