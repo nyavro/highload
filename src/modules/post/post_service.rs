@@ -15,11 +15,23 @@ pub enum PostServiceError {
     Internal(String),
 }
 
-pub async fn create<'a>(client: Object, user_id: Uuid, text: &String) -> Result<i64, PostServiceError> {
+pub async fn create<'a>(client: Object, user_id: Uuid, text: &String) -> Result<Uuid, PostServiceError> {
     let res = client.query_one(
         "INSERT INTO posts (user_id, text) VALUES ($1, $2) RETURNING id", 
         &[&user_id, text]
     ).await?;
-    let id: i64 = res.get(0);    
+    let id: Uuid = res.get(0);    
     Ok(id)
+}
+
+pub async fn update(client: Object, user_id: Uuid, post_id: Uuid, text: &String) -> Result<(), PostServiceError> {
+    let rows_affected = client.execute(
+        "UPDATE posts SET text=$1,updated_at=NOW() WHERE user_id=$2 AND id=$3", 
+        &[text, &user_id, &post_id]
+    ).await?;    
+    if rows_affected > 0 {
+        Ok(())
+    } else {
+        Err(PostServiceError::Internal("Not updated".to_string()))
+    }
 }

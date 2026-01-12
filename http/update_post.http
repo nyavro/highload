@@ -1,0 +1,9 @@
+PUT http://localhost:3000/post/update
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiZWU2MDQ2NTEtMTRlNS00ZWE0LTkwZDgtMjdlNTU4NzBmYjA0IiwiZXhwIjoxNzY4MjAxNjQ4fQ.mDEen2tgUJ8dCrlXuKeUYP6NoJ3N9G_WVG6kdsVPRQA
+content-type: application/json
+accept: application/json
+
+{   
+    "id": "4ab9c49b-f262-4757-af63-173080d73057",
+    "text": "Hey all! WA?!"
+}

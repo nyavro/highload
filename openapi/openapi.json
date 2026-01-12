@@ -365,6 +365,51 @@
           }
         }
       }
+    },
+    "/post/update": {      
+      "put": {
+        "tags": ["post"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id","text"],
+                "properties": {
+                  "id": {
+                    "$ref": "#/components/schemas/PostId"
+                  },
+                  "text": {
+                    "$ref": "#/components/schemas/PostText"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешно изменен пост"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/5xx"
+          },
+          "503": {
+            "$ref": "#/components/responses/5xx"
+          }
+        }
+      }
     }
   },
   "components": {
