@@ -1,5 +1,5 @@
-POST http://localhost:3000/post/create
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiZWU2MDQ2NTEtMTRlNS00ZWE0LTkwZDgtMjdlNTU4NzBmYjA0IiwiZXhwIjoxNzY4MjAwNzM2fQ.A6Zd9UVqnXOcGxCCpghrwb6GJSI3PcgmQ6k3CGyIMJA
+POST http://localhost:3000/post
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiZWU2MDQ2NTEtMTRlNS00ZWE0LTkwZDgtMjdlNTU4NzBmYjA0IiwiZXhwIjoxNzY4MjAyODYzfQ.H2XKs8tUGQbZ2hyqeexlWX1491dsJobFt59KBxlurH8
 content-type: application/json
 accept: application/json
 

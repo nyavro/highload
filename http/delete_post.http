@@ -1,0 +1,4 @@
+DELETE http://localhost:3000/post/delete/4ab9c49b-f262-4757-af63-173080d73057
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiZWU2MDQ2NTEtMTRlNS00ZWE0LTkwZDgtMjdlNTU4NzBmYjA0IiwiZXhwIjoxNzY4MjAyMzUwfQ.rl72BT3_u04YZcHalss_Io6AGdF6-_YadFxGJNo5Uuo
+content-type: application/json
+accept: application/json

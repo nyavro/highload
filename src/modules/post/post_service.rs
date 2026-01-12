@@ -35,3 +35,15 @@ pub async fn update(client: Object, user_id: Uuid, post_id: Uuid, text: &String)
         Err(PostServiceError::Internal("Not updated".to_string()))
     }
 }
+
+pub async fn delete(client: Object, user_id: Uuid, post_id: Uuid) -> Result<(), PostServiceError> {
+    let rows_affected = client.execute(
+        "DELETE FROM posts WHERE user_id=$1 AND id=$2", 
+        &[&user_id, &post_id]
+    ).await?;    
+    if rows_affected > 0 {
+        Ok(())
+    } else {
+        Err(PostServiceError::Internal("Not updated".to_string()))
+    }
+}

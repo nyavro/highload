@@ -317,7 +317,7 @@
         }
       }
     },
-    "/post/create": {      
+    "/post": {
       "post": {
         "tags": ["post"],
         "security": [
@@ -364,9 +364,7 @@
             "$ref": "#/components/responses/5xx"
           }
         }
-      }
-    },
-    "/post/update": {      
+      },
       "put": {
         "tags": ["post"],
         "security": [
@@ -395,6 +393,43 @@
         "responses": {
           "200": {
             "description": "Успешно изменен пост"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/5xx"
+          },
+          "503": {
+            "$ref": "#/components/responses/5xx"
+          }
+        }
+      }
+    },
+    "/post/{id}": {
+      "delete": {
+        "tags": ["post"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "schema": {
+              "$ref": "#/components/schemas/PostId"
+            },
+            "required": true,
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешно удален пост"
           },
           "400": {
             "$ref": "#/components/responses/400"
