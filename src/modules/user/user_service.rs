@@ -20,7 +20,7 @@ pub struct UserRegistrationResult {
 
 #[derive(Debug)]
 pub struct User {
-    pub id: Option<String>,            
+    pub id: Option<Uuid>,            
     pub first_name: String,
     pub last_name: String,
     pub birthdate: chrono::naive::NaiveDate,
@@ -72,7 +72,7 @@ pub async fn get_user_by_id(client: Object, id: Uuid) -> Result<User, String> {
     let city: String = row.get(4);   
     Ok(
         User{
-            id: Some(id.to_string()),
+            id: Some(id),
             first_name,
             last_name,
             birthdate,
@@ -89,7 +89,7 @@ pub async fn search_by_first_and_last_name(client: Object, first_name: &String, 
         .map(|row| {
             let id: Option<uuid::Uuid> = row.get("id");
             User {
-                id: id.map(|t| t.to_string()),
+                id,
                 first_name: row.get("first_name"),
                 last_name: row.get("last_name"),
                 birthdate: row.get("birthdate"),

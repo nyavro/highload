@@ -95,7 +95,7 @@ fn to_user_dtos(users: Vec<user_service::User>) -> Vec<openapi::models::User> {
 
 fn to_user_dto(user: user_service::User) -> openapi::models::User {
     openapi::models::User {
-        id: user.id,
+        id: user.id.map(|t| t.to_string()),
         first_name: user.first_name,
         last_name: user.last_name,
         birthdate: user.birthdate,

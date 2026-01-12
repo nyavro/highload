@@ -1,0 +1,4 @@
+GET http://localhost:3000/post/d5ae2e5a-2b1d-4b8b-9d7c-895dfe0647b0
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiZWU2MDQ2NTEtMTRlNS00ZWE0LTkwZDgtMjdlNTU4NzBmYjA0IiwiZXhwIjoxNzY4MjA1NDE1fQ.aWfgD5QQmcnIqXPFGd6yD1_dXkZiGnHVbTfbZsoWXsA
+content-type: application/json
+accept: application/json

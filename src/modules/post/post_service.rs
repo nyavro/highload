@@ -2,7 +2,6 @@ use uuid::Uuid;
 use deadpool_postgres::{Object};
 use thiserror::Error;
 
-
 #[derive(Error, Debug)]
 pub enum PostServiceError {
     #[error("Database error: {0}")]
@@ -14,6 +13,14 @@ pub enum PostServiceError {
     #[error("Internal error: {0}")]
     Internal(String),
 }
+
+#[derive(Debug)]
+pub struct Post {
+    pub id: Uuid,            
+    pub text: String,
+    pub author_user_id: Uuid
+}
+
 
 pub async fn create<'a>(client: Object, user_id: Uuid, text: &String) -> Result<Uuid, PostServiceError> {
     let res = client.query_one(
@@ -46,4 +53,14 @@ pub async fn delete(client: Object, user_id: Uuid, post_id: Uuid) -> Result<(), 
     } else {
         Err(PostServiceError::Internal("Not updated".to_string()))
     }
+}
+
+pub async fn get(client: Object, post_id: Uuid) -> Result<Post, PostServiceError> {
+    let res = client.query_one(
+        "SELECT text,user_id FROM posts WHERE id=$1", 
+        &[&post_id]
+    ).await?;    
+    let text: String = res.get(0);    
+    let author_user_id: Uuid = res.get(1);    
+    Ok(Post {id: post_id, text, author_user_id})
 }

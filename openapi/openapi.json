@@ -410,6 +410,43 @@
       }
     },
     "/post/{id}": {
+      "get": {
+        "tags": ["post"],
+        "parameters": [
+          {
+            "name": "id",
+            "schema": {
+              "$ref": "#/components/schemas/PostId"
+            },
+            "required": true,
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешно получен пост",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Post"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/5xx"
+          },
+          "503": {
+            "$ref": "#/components/responses/5xx"
+          }
+        }
+      },
       "delete": {
         "tags": ["post"],
         "security": [
@@ -550,6 +587,26 @@
         "type": "string",
         "description": "Текст поста",
         "example": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lectus mauris ultrices eros in cursus turpis massa."
+      },
+      "Post": {
+        "type": "object",
+        "description": "Пост пользователя",
+        "required": [
+          "id",
+          "text", 
+          "author_user_id"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/PostId"
+          },
+          "text": {
+            "$ref": "#/components/schemas/PostText"
+          },
+          "author_user_id": {
+            "$ref": "#/components/schemas/UserId"
+          }
+        }
       }
     },
     "securitySchemes": {

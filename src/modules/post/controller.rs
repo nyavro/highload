@@ -1,4 +1,4 @@
-use openapi::apis::post::{Post, PostPostResponse, PostPutResponse, PostIdDeleteResponse};
+use openapi::apis::post::{Post, PostPostResponse, PostIdGetResponse, PostPutResponse, PostIdDeleteResponse};
 use axum_extra::extract::{CookieJar, Host};
 use axum::http::Method;
 use async_trait::async_trait; 
@@ -41,6 +41,33 @@ impl Post for Application {
         }
     }
 
+    async fn post_id_get(
+        &self,    
+        _: &Method,
+        _: &Host,
+        _: &CookieJar,
+        path_params: &models::PostIdGetPathParams,
+    ) -> Result<PostIdGetResponse, ()> {
+        let post_id = match Uuid::parse_str(&path_params.id) {
+            Ok(id) => id,
+            Err(_) => return Ok(PostIdGetResponse::Status400)
+        };
+        match post_service::get(self.state.get_master_client().await, post_id).await {
+            Ok(post) => Ok(PostIdGetResponse::Status200(to_post_dto(post))),
+            Err(e) => {
+                log::error!("Get post error: {:?}", e);
+                Ok(PostIdGetResponse::Status500 {
+                    body: models::LoginPost500Response {
+                        message: "Internal Server Error".to_string(),
+                        request_id: None,
+                        code: None
+                    },
+                    retry_after: None,
+                })
+            }
+        }  
+    }
+
     async fn post_put(
         &self,    
         _: &Method,
@@ -58,7 +85,7 @@ impl Post for Application {
                 match post_service::update(self.state.get_master_client().await, claims.user_id, post_id, &post.text).await {
                     Ok(()) => Ok(PostPutResponse::Status200),
                     Err(e) => {
-                        log::error!("Create post error: {:?}", e);
+                        log::error!("Update post error: {:?}", e);
                         Ok(PostPutResponse::Status500 {
                             body: models::LoginPost500Response {
                                 message: "Internal Server Error".to_string(),
@@ -89,7 +116,7 @@ impl Post for Application {
         match post_service::delete(self.state.get_master_client().await, claims.user_id, post_id).await {
             Ok(()) => Ok(PostIdDeleteResponse::Status200),
             Err(e) => {
-                log::error!("Create post error: {:?}", e);
+                log::error!("Delete post error: {:?}", e);
                 Ok(PostIdDeleteResponse::Status500 {
                     body: models::LoginPost500Response {
                         message: "Internal Server Error".to_string(),
@@ -101,4 +128,12 @@ impl Post for Application {
             }
         }  
     }
+}
+
+fn to_post_dto(post: post_service::Post) -> openapi::models::Post {
+    openapi::models::Post {
+        id: post.id.to_string(),
+        text: post.text,
+        author_user_id: post.author_user_id.to_string()
+    }    
 }
