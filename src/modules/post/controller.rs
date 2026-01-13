@@ -137,9 +137,7 @@ impl Post for Application {
         claims: &Self::Claims,
         query_params: &models::PostFeedGetQueryParams,
     ) -> Result<PostFeedGetResponse, ()> {
-        let limit = query_params.limit.ok_or(())?;
-        let offset = query_params.offset.ok_or(())?;
-        match post_service::feed(self.state.get_master_client().await, claims.user_id, limit, offset).await {
+        match post_service::feed(self.state.get_master_client().await, claims.user_id, query_params.limit, query_params.offset).await {
             Ok(posts) => Ok(PostFeedGetResponse::Status200(to_post_dtos(posts))),
             Err(e) => {
                 log::error!("Feed posts error: {:?}", e);

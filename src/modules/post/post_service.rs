@@ -65,10 +65,12 @@ pub async fn get(client: Object, post_id: Uuid) -> Result<Post, PostServiceError
     Ok(Post {id: post_id, text, author_user_id})
 }
 
-pub async fn feed(client: Object, post_id: Uuid, limit: i64, offset: i64) -> Result<Vec<Post>, PostServiceError> {
+pub async fn feed(client: Object, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<Post>, PostServiceError> {
     let res = client.query(
-        "SELECT p.id, p.text, p.user_id FROM posts p WHERE id=$1", 
-        &[&post_id]
+        "SELECT p.text,p.user_id,p.id 
+            FROM ((SELECT friend_id AS f_id FROM friends WHERE initiator_id=$1 AND NOT status='blocked') UNION (SELECT initiator_id AS f_id FROM friends WHERE friend_id=$1 AND NOT status='blocked')) q 
+            JOIN posts p ON q.f_id = p.user_id ORDER BY p.created_at DESC LIMIT $2 OFFSET $3", 
+        &[&user_id, &limit, &offset]
     ).await?;        
     Ok(
         res.iter().map(|row| {

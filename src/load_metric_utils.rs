@@ -6,15 +6,16 @@ use deadpool_postgres::{Object};
 pub async fn generate_load_data(app_state: Arc<AppState>) {
     let target_dir = "load-testing";
     let client = app_state.get_master_client().await;
-    generate_user_ids_csv(&client, &target_dir).await;
+    generate_user_ids_csv(&client, &target_dir, "user_ids.csv", 1009, 0).await;
+    generate_user_ids_csv(&client, &target_dir, "friends_ids.csv", 919, 2000).await;
     generate_firstname_prefixes_csv(&client, &target_dir).await;
     generate_lastname_prefixes_csv(&client, &target_dir).await;    
 }
 
-async fn generate_user_ids_csv(client: &Object, target_dir: &str) {
-    let statement = client.prepare_cached("SELECT id FROM users LIMIT 1009").await.unwrap();            
-    let mut wrtr = Writer::from_path(target_dir.to_owned() + "/user_ids.csv").unwrap();
-    let res = client.query(&statement, &[]).await.unwrap();    
+async fn generate_user_ids_csv(client: &Object, target_dir: &str, file_name: &str, limit: i64, offset: i64) {
+    let statement = client.prepare_cached("SELECT id FROM users LIMIT $1 OFFSET $2").await.unwrap();            
+    let mut wrtr = Writer::from_path(target_dir.to_owned() + "/" + file_name).unwrap();
+    let res = client.query(&statement, &[&limit, &offset]).await.unwrap();    
     for result in res {        
         let id: Option<uuid::Uuid> = result.get("id");
         wrtr.write_record(&[id.map(|t| t.to_string()).unwrap()]).unwrap();

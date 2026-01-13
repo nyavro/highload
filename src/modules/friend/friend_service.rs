@@ -1,6 +1,7 @@
 use uuid::Uuid;
 use deadpool_postgres::{Object};
 use thiserror::Error;
+use log::info;
 
 #[derive(Error, Debug)]
 pub enum FriendServiceError {
@@ -12,6 +13,9 @@ pub enum FriendServiceError {
 
     #[error("Internal error: {0}")]
     Internal(String),
+
+    #[error("Illegal state: {0}")]
+    IllegalState(String),
 }
 
 pub enum FriendshipCreateResult {
@@ -26,15 +30,20 @@ pub enum FriendshipEndResult {
 }
 
 pub async fn add_friend(mut client: Object, initiator_user_id: Uuid, user_id: Uuid) -> Result<FriendshipCreateResult, FriendServiceError> {         
+    if initiator_user_id == user_id {
+        return Err(FriendServiceError::IllegalState("Cannot add self as friend".to_string()));
+    }
     let tx = client.transaction().await?;
     let rows_affected = tx.execute(
-    "UPDATE friends SET status = 'accepted', updated_at = NOW() WHERE initiator_id = $2 AND friend_id = $1 AND status = 'pending'",
+    "UPDATE friends SET status = 'accepted', updated_at = NOW() WHERE initiator_id = $1 AND friend_id = $2 AND status = 'pending'",
     &[&user_id, &initiator_user_id]
     ).await?;
     if rows_affected > 0 {    
+        info!("Friendship request accepted");
         tx.commit().await;
         return Ok(FriendshipCreateResult::Accepted);
     }
+    info!("Adding friendship request");
     let insert_res = tx.execute(
         "INSERT INTO friends (initiator_id, friend_id, status)
         VALUES ($1, $2, 'pending')
@@ -43,8 +52,10 @@ pub async fn add_friend(mut client: Object, initiator_user_id: Uuid, user_id: Uu
     ).await?;
     tx.commit().await?;
     if insert_res > 0 {
+        info!("Friendship request added");
         Ok(FriendshipCreateResult::RequestSent)
     } else {
+        info!("Friendship request already exists");
         Ok(FriendshipCreateResult::AlreadyExists)
     }
 }
