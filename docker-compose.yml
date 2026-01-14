@@ -14,11 +14,12 @@ services:
       - ./db-config/init-master.sh:/docker-entrypoint-initdb.d/init-master.sh
       - ./db-config/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./db-config/data/people.v2.csv:/docker-entrypoint-initdb.d/data.csv
+      - ./db-config/data/posts.txt:/docker-entrypoint-initdb.d/posts.txt
     deploy:
       resources:
         limits: 
-          cpus: '0.8'  
-          memory: '100M'
+          cpus: '1'  
+          memory: '500M'
 
   postgres-replica-1:
     image: postgres:13.3

@@ -40,7 +40,7 @@ pub async fn add_friend(mut client: Object, initiator_user_id: Uuid, user_id: Uu
     ).await?;
     if rows_affected > 0 {    
         info!("Friendship request accepted");
-        tx.commit().await;
+        tx.commit().await?;
         return Ok(FriendshipCreateResult::Accepted);
     }
     info!("Adding friendship request");
