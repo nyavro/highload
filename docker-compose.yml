@@ -68,6 +68,16 @@ services:
       - postgres-master
     command: ["/usr/local/bin/init-and-run-replica.sh"]
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis_app
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis_data:/data
+    command: redis-server --requirepass secure_password --appendonly yes
+
   pgpool:
     image: pgpool/pgpool:latest
     ports:

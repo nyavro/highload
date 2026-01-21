@@ -1,0 +1,8 @@
+use uuid::Uuid;
+
+#[derive(Debug)]
+pub struct Post {
+    pub id: Uuid,            
+    pub text: String,
+    pub author_user_id: Uuid
+}

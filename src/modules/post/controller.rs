@@ -3,7 +3,7 @@ use axum_extra::extract::{CookieJar, Host};
 use axum::http::Method;
 use async_trait::async_trait; 
 use openapi::models::{self};
-use crate::modules::post::post_service;
+use crate::modules::post::{model, post_service::{PostService, PostServiceImpl}};
 use crate::modules::auth::auth;
 use crate::Application;
 use uuid::Uuid;
@@ -22,7 +22,8 @@ impl Post for Application {
     ) -> Result<PostPostResponse, ()> {
         match body {
             Some(post) => {
-                match post_service::create(self.state.get_master_client().await, claims.user_id, &post.text).await {
+                let service = PostServiceImpl::new(self.state.get_master_client().await);
+                match service.create(claims.user_id, &post.text).await {
                     Ok(post_id) => Ok(PostPostResponse::Status200(post_id.to_string())),
                     Err(e) => {
                         log::error!("Create post error: {:?}", e);
@@ -52,7 +53,8 @@ impl Post for Application {
             Ok(id) => id,
             Err(_) => return Ok(PostIdGetResponse::Status400)
         };
-        match post_service::get(self.state.get_replica_client().await, post_id).await {
+        let service = PostServiceImpl::new(self.state.get_replica_client().await);
+        match service.get(post_id).await {
             Ok(post) => Ok(PostIdGetResponse::Status200(to_post_dto(post))),
             Err(e) => {
                 log::error!("Get post error: {:?}", e);
@@ -81,8 +83,9 @@ impl Post for Application {
                 let post_id = match Uuid::parse_str(&post.id) {
                     Ok(id) => id,
                     Err(_) => return Ok(PostPutResponse::Status400)
-                };
-                match post_service::update(self.state.get_master_client().await, claims.user_id, post_id, &post.text).await {
+                };                
+                let service = PostServiceImpl::new(self.state.get_master_client().await);
+                match service.update(claims.user_id, post_id, &post.text).await {
                     Ok(()) => Ok(PostPutResponse::Status200),
                     Err(e) => {
                         log::error!("Update post error: {:?}", e);
@@ -113,7 +116,8 @@ impl Post for Application {
             Ok(id) => id,
             Err(_) => return Ok(PostIdDeleteResponse::Status400)
         };
-        match post_service::delete(self.state.get_master_client().await, claims.user_id, post_id).await {
+        let service = PostServiceImpl::new(self.state.get_master_client().await);
+        match service.delete(claims.user_id, post_id).await {
             Ok(()) => Ok(PostIdDeleteResponse::Status200),
             Err(e) => {
                 log::error!("Delete post error: {:?}", e);
@@ -137,7 +141,8 @@ impl Post for Application {
         claims: &Self::Claims,
         query_params: &models::PostFeedGetQueryParams,
     ) -> Result<PostFeedGetResponse, ()> {
-        match post_service::feed(self.state.get_master_client().await, claims.user_id, query_params.limit, query_params.offset).await {
+        let service = PostServiceImpl::new(self.state.get_replica_client().await);
+        match service.feed(claims.user_id, query_params.limit, query_params.offset).await {
             Ok(posts) => Ok(PostFeedGetResponse::Status200(to_post_dtos(posts))),
             Err(e) => {
                 log::error!("Feed posts error: {:?}", e);
@@ -154,7 +159,7 @@ impl Post for Application {
     }
 }
 
-fn to_post_dto(post: post_service::Post) -> openapi::models::Post {
+fn to_post_dto(post: model::Post) -> openapi::models::Post {
     openapi::models::Post {
         id: post.id.to_string(),
         text: post.text,
@@ -162,6 +167,6 @@ fn to_post_dto(post: post_service::Post) -> openapi::models::Post {
     }    
 }
 
-fn to_post_dtos(posts: Vec<post_service::Post>) -> Vec<openapi::models::Post> {
+fn to_post_dtos(posts: Vec<model::Post>) -> Vec<openapi::models::Post> {
     posts.into_iter().map(to_post_dto).collect()
 }

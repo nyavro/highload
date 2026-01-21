@@ -9,6 +9,7 @@ pub struct AppState {
     replica_pools: Vec<Pool>,
     pub secret: String,
     pub jwt_token_ttl_minutes: i64,    
+    pub redis_pool: deadpool_redis::Pool
 }
 
 fn init_config(port_key: &str) -> Config {
@@ -21,6 +22,11 @@ fn init_config(port_key: &str) -> Config {
     config.manager = Some(ManagerConfig { recycling_method: RecyclingMethod::Fast });        
     config.connect_timeout = Some(Duration::from_secs(10));        
     config
+}
+
+fn init_redis() -> deadpool_redis::Pool {
+    let cfg = deadpool_redis::Config::from_url("redis://127.0.0.1:6379/");
+    cfg.create_pool(Some(deadpool_redis::Runtime::Tokio1)).unwrap()
 }
 
 impl AppState {    
@@ -45,7 +51,8 @@ impl AppState {
             master_pool,
             replica_pools: vec!(replica_pool1, replica_pool2),
             secret: env::var("JWT_SECRET").unwrap(),
-            jwt_token_ttl_minutes: env::var("jwt_token_ttl_minutes").unwrap().parse().unwrap()
+            jwt_token_ttl_minutes: env::var("jwt_token_ttl_minutes").unwrap().parse().unwrap(),
+            redis_pool: init_redis()
         }
     }
 
@@ -59,5 +66,5 @@ impl AppState {
         info!("{:?}", idx);
         self.replica_pools[idx].get().await.unwrap()
         // self.get_master_client().await
-    }    
+    }        
 }

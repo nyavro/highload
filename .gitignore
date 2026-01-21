@@ -2,3 +2,4 @@ target/**
 api/**
 .env.secret
 load-testing/*.csv
+redis_data/**
