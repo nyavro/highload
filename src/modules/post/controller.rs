@@ -21,7 +21,7 @@ impl Post for Application {
         body: &Option<models::PostPostRequest>,
     ) -> Result<PostPostResponse, ()> {
         match body {
-            Some(post) => {
+            Some(post) => {                
                 let service = PostServiceImpl::new(self.state.get_master_client().await, &self.state.redis_pool);
                 match service.create(claims.user_id, &post.text).await {
                     Ok(post_id) => Ok(PostPostResponse::Status200(post_id.to_string())),
@@ -52,8 +52,11 @@ impl Post for Application {
         let post_id = match Uuid::parse_str(&path_params.id) {
             Ok(id) => id,
             Err(_) => return Ok(PostIdGetResponse::Status400)
-        };
-        let service = PostServiceImpl::new(self.state.get_replica_client().await, &self.state.redis_pool);
+        };    
+        let service = PostServiceImpl::new(
+            self.state.get_replica_client().await, 
+            &self.state.redis_pool
+        );
         match service.get(post_id).await {
             Ok(post) => Ok(PostIdGetResponse::Status200(to_post_dto(post))),
             Err(e) => {

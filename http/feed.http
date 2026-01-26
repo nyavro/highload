@@ -1,0 +1,4 @@
+GET http://localhost:3000/post/feed/
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiZDJhZjZlYTEtZjY5MS00ZDgzLThkNjUtZGUxYjJiOTQ0ZmQxIiwiZXhwIjoxNzY5MTU5NTU3fQ.bGfiyGAKfd4QSBm3KEBd__A9RW0OUzJFAzEZNdvKK5g
+content-type: application/json
+accept: application/json

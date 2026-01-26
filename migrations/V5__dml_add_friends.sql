@@ -5,11 +5,18 @@ LIMIT 500009;
 
 CREATE INDEX idx_pool_rn ON friend_pool(rn);
 
-INSERT INTO friends (initiator_id, friend_id, status)
-SELECT 
-    u.id as initiator_id,
-    p.id as friend_id,
-    'accepted'
+INSERT INTO friends (user_id, friend_id, status)
+(
+    SELECT 
+        u.id as user_id,
+        p.id as friend_id,
+        'accepted'
+    UNION
+    SELECT 
+        p.id as user_id,
+        u.id as friend_id,
+        'accepted'
+)
 FROM (
     SELECT id, row_number() OVER () as user_rn
     FROM users    

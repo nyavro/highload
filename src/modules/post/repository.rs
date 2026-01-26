@@ -2,7 +2,7 @@ use uuid::Uuid;
 use deadpool_postgres::{Object};
 use thiserror::Error;
 use crate::modules::post::model::Post;
-
+use std::sync::Arc;
 
 #[derive(Error, Debug)]
 pub enum PostRepositoryError {
@@ -21,15 +21,15 @@ pub trait PostRepository {
     async fn update(&self, user_id: Uuid, post_id: Uuid, text: &String) -> Result<(), PostRepositoryError>;
     async fn delete(&self, user_id: Uuid, post_id: Uuid) -> Result<(), PostRepositoryError>;
     async fn get(&self, post_id: Uuid) -> Result<Post, PostRepositoryError>;
-    async fn feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<Post>, PostRepositoryError>;
+    async fn feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<Post>, PostRepositoryError>;    
 }
 
 pub struct PostRepositoryImpl {
-    client: Object
+    client: Arc<Object>
 }
 
 impl PostRepositoryImpl {
-    pub fn new(client: Object) -> Self {
+    pub fn new(client: Arc<Object>) -> Self {
         PostRepositoryImpl { client }
     }
 }
@@ -82,7 +82,7 @@ impl PostRepository for PostRepositoryImpl {
     async fn feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<Post>, PostRepositoryError> {
         let res = self.client.query(
             "SELECT p.text,p.user_id,p.id 
-                FROM ((SELECT friend_id AS f_id FROM friends WHERE initiator_id=$1 AND NOT status='blocked') UNION (SELECT initiator_id AS f_id FROM friends WHERE friend_id=$1 AND NOT status='blocked')) q 
+                FROM (SELECT friend_id AS f_id FROM friends WHERE user_id=$1) q 
                 JOIN posts p ON q.f_id = p.user_id ORDER BY p.created_at DESC LIMIT $2 OFFSET $3", 
             &[&user_id, &limit, &offset]
         ).await?;        

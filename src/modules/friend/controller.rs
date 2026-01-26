@@ -29,8 +29,8 @@ impl Friend for Application {
             claims.user_id, 
             uuid
         ).await {
-            Ok(friend_service::FriendshipCreateResult::Accepted) => Ok(FriendSetUserIdPutResponse::Status200),
-            Ok(friend_service::FriendshipCreateResult::RequestSent) => Ok(FriendSetUserIdPutResponse::Status200),
+            Ok(friend_service::FriendshipCreateResult::Mutual) => Ok(FriendSetUserIdPutResponse::Status200),
+            Ok(friend_service::FriendshipCreateResult::Subscribed) => Ok(FriendSetUserIdPutResponse::Status200),
             Ok(friend_service::FriendshipCreateResult::AlreadyExists) => Ok(FriendSetUserIdPutResponse::Status400),             
             Err(e) => {
                 log::error!("Friendship create error: {:?}", e);
@@ -64,8 +64,8 @@ impl Friend for Application {
             cur_user_id,
             false
         ).await {
-            Ok(friend_service::FriendshipEndResult::Subscribed) => Ok(FriendDeleteUserIdPutResponse::Status200),
-            Ok(friend_service::FriendshipEndResult::Blocked) => Ok(FriendDeleteUserIdPutResponse::Status200),
+            Ok(friend_service::FriendshipEndResult::Removed) => Ok(FriendDeleteUserIdPutResponse::Status200),
+            Ok(friend_service::FriendshipEndResult::Unsubscribed) => Ok(FriendDeleteUserIdPutResponse::Status200),
             Ok(friend_service::FriendshipEndResult::NotInFriendship) => Ok(FriendDeleteUserIdPutResponse::Status400),             
             Err(e) => {
                 log::error!("Friendship end error: {:?}", e);
