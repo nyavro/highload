@@ -5,5 +5,6 @@ use serde::{Serialize, Deserialize};
 pub struct Post {
     pub id: Uuid,            
     pub text: String,
-    pub author_user_id: Uuid
+    pub author_user_id: Uuid,
+    pub timestamp: chrono::DateTime<chrono::Utc>
 }

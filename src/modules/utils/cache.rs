@@ -39,3 +39,36 @@ pub async fn get_or_set_cache<T, E, F, Fut>(redis_pool: &deadpool_redis::Pool, c
         fetch_func().await    
     }        
 }
+
+pub async fn hget_or_set_cache<T, E, F, Fut>(redis_pool: &deadpool_redis::Pool, cache_key: &str, fetch_func: F, item_key: &str) -> Result<T, E> 
+    where
+        T: Serialize + for<'de> Deserialize<'de>,
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = Result<T, E>>, {           
+    let mut conn = match redis_pool.get().await {
+        Ok(c) => c,
+        Err(_) => {
+            warn!("Redis pool error, fetching directly from DB");
+            return fetch_func().await;
+        }
+    };  
+    if let Ok(Some(json)) = cmd("HGET")
+        .arg(cache_key)
+        .arg(&item_key)
+        .query_async::<Option<String>>(&mut conn).await {
+        match serde_json::from_str(&json) {
+            Ok(res) => return Ok(res),
+            Err(e) => {
+                error!("Failed to deserialize cache for {}: {}", cache_key, e);
+            }
+        };
+    }
+    let item = fetch_func().await?;
+    let _ = cmd("HSET")
+        .arg("posts_data_store")
+        .arg(&item_key)
+        .arg(serde_json::to_string(&item).unwrap())
+        .query_async::<()>(&mut conn)
+        .await;
+    Ok(item)                               
+}
