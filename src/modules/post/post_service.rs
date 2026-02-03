@@ -143,7 +143,7 @@ impl <'b> PostService for PostServiceImpl<'b> {
             Ok(post) => {
                 match self.redis_pool.get().await {
                     Ok(mut conn) => {
-                        let item_key = format!("post:{}", uuid);
+                        let item_key = format!("post:{}", post.id);
                         let _ = cmd("HSET")
                             .arg("posts_data_store")
                             .arg(&item_key)
@@ -156,8 +156,8 @@ impl <'b> PostService for PostServiceImpl<'b> {
                                     let cache_key = format!("highload/post/feed/ids/{}", follower_id);
                                     cmd("ZADD")
                                         .arg(&cache_key)
-                                        .arg(post.timestamp) // Score для сортировки
-                                        .arg(post.to_string())        
+                                        .arg(post.timestamp.to_string()) 
+                                        .arg(post.id.to_string())        
                                         .query_async::<()>(&mut conn)
                                         .await
                                         .ok();
@@ -172,7 +172,7 @@ impl <'b> PostService for PostServiceImpl<'b> {
                         warn!("Redis pool connection error {}", e);
                     }
                 }
-                Ok(uuid)
+                Ok(post.id)
             },
             Err(e) => Err(PostServiceError::Database(e))
         }
