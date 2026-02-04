@@ -1,4 +1,3 @@
-use openapi::apis::user;
 use uuid::Uuid;
 use deadpool_postgres::{Object};
 use thiserror::Error;

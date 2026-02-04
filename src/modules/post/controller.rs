@@ -22,7 +22,7 @@ impl Post for Application {
     ) -> Result<PostPostResponse, ()> {
         match body {
             Some(post) => {                
-                let service = PostServiceImpl::new(self.state.get_master_client().await, &self.state.redis_pool);
+                let service = PostServiceImpl::new(self.state.get_master_client().await, &self.state.redis);
                 match service.create(claims.user_id, &post.text).await {
                     Ok(post_id) => Ok(PostPostResponse::Status200(post_id.to_string())),
                     Err(e) => {
@@ -55,7 +55,7 @@ impl Post for Application {
         };    
         let service = PostServiceImpl::new(
             self.state.get_replica_client().await, 
-            &self.state.redis_pool
+            &self.state.redis
         );
         match service.get(post_id).await {
             Ok(post) => Ok(PostIdGetResponse::Status200(to_post_dto(post))),
@@ -87,7 +87,7 @@ impl Post for Application {
                     Ok(id) => id,
                     Err(_) => return Ok(PostPutResponse::Status400)
                 };                
-                let service = PostServiceImpl::new(self.state.get_master_client().await, &self.state.redis_pool);
+                let service = PostServiceImpl::new(self.state.get_master_client().await, &self.state.redis);
                 match service.update(claims.user_id, post_id, &post.text).await {
                     Ok(()) => Ok(PostPutResponse::Status200),
                     Err(e) => {
@@ -119,7 +119,7 @@ impl Post for Application {
             Ok(id) => id,
             Err(_) => return Ok(PostIdDeleteResponse::Status400)
         };
-        let service = PostServiceImpl::new(self.state.get_master_client().await, &self.state.redis_pool);
+        let service = PostServiceImpl::new(self.state.get_master_client().await, &self.state.redis);
         match service.delete(claims.user_id, post_id).await {
             Ok(()) => Ok(PostIdDeleteResponse::Status200),
             Err(e) => {
@@ -144,7 +144,7 @@ impl Post for Application {
         claims: &Self::Claims,
         query_params: &models::PostFeedGetQueryParams,
     ) -> Result<PostFeedGetResponse, ()> {        
-        let service = PostServiceImpl::new(self.state.get_replica_client().await, &self.state.redis_pool);
+        let service = PostServiceImpl::new(self.state.get_replica_client().await, &self.state.redis);
         match service.feed(claims.user_id, query_params.limit, query_params.offset).await {
             Ok(posts) => Ok(PostFeedGetResponse::Status200(to_post_dtos(posts))),
             Err(e) => {

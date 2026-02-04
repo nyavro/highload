@@ -16,7 +16,7 @@ async fn main() -> Result<(), Error> {
     dotenv::from_filename(".env.secret").ok();    
     dotenv().ok();    
     env_logger::init();        
-    let app_state = Arc::new(AppState::init().await);
+    let app_state = Arc::new(AppState::init().await.unwrap());
     migrations::run_migrations(app_state.clone()).await;
     load_metric_utils::generate_load_data(app_state.clone()).await;    
     let app = openapi::server::new(Application::new (app_state));    

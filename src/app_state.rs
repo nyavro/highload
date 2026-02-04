@@ -2,14 +2,15 @@ use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod, Runtime, O
 use tokio_postgres::{NoTls};
 use std::{env, time::Duration};
 use log::info;
+use fred::{prelude::{Error, ReconnectPolicy}, prelude::*};
 
 #[derive(Clone)]
 pub struct AppState {
     master_pool: Pool,
     replica_pools: Vec<Pool>,
     pub secret: String,
-    pub jwt_token_ttl_minutes: i64,    
-    pub redis_pool: deadpool_redis::Pool
+    pub jwt_token_ttl_minutes: i64,
+    pub redis: fred::prelude::Pool,
 }
 
 fn init_config(port_key: &str) -> Config {
@@ -24,14 +25,27 @@ fn init_config(port_key: &str) -> Config {
     config
 }
 
-fn init_redis() -> deadpool_redis::Pool {
-    let cfg = deadpool_redis::Config::from_url("redis://127.0.0.1:6379/");
-    cfg.create_pool(Some(deadpool_redis::Runtime::Tokio1)).unwrap()
+async fn init_redis_pool() -> Result<fred::prelude::Pool, Error> {
+    let pool_size = env::var("REDIS_POOL_SIZE")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or(8);
+    let config = fred::prelude::Config::from_url("redis://127.0.0.1:6379/").expect("Failed to create redis config from url");
+    let pool = fred::prelude::Builder::from_config(config)
+        .with_connection_config(|config| {
+            config.connection_timeout = Duration::from_secs(10);
+        })        
+        .set_policy(ReconnectPolicy::new_exponential(0, 100, 30_000, 2))
+        .build_pool(pool_size)
+        .expect("Failed to create redis pool");            
+    pool.init().await.expect("Failed to connect to redis");
+    info!("Connected to Redis");
+    Ok(pool)
 }
 
 impl AppState {    
 
-    pub async fn init() -> Self {        
+    pub async fn init() -> Result<Self, String> {        
         let master_pool = init_config(
                 "db_postgres_master_port"
             )
@@ -46,14 +60,16 @@ impl AppState {
                 "db_postgres_replica2_port"
             )
             .create_pool(Some(Runtime::Tokio1), NoTls).unwrap();
-        replica_pool2.resize(10);
-        AppState {
-            master_pool,
-            replica_pools: vec!(replica_pool1, replica_pool2),
-            secret: env::var("JWT_SECRET").unwrap(),
-            jwt_token_ttl_minutes: env::var("jwt_token_ttl_minutes").unwrap().parse().unwrap(),
-            redis_pool: init_redis()
-        }
+        replica_pool2.resize(10);        
+        Ok(
+            AppState {
+                master_pool,
+                replica_pools: vec!(replica_pool1, replica_pool2),
+                secret: env::var("JWT_SECRET").unwrap(),
+                jwt_token_ttl_minutes: env::var("jwt_token_ttl_minutes").unwrap().parse().unwrap(),                
+                redis: init_redis_pool().await.unwrap()
+            }
+        )
     }
 
     pub async fn get_master_client(&self) -> Object {
