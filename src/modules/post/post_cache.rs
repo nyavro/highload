@@ -4,9 +4,12 @@ use crate::modules::post::{model::Post};
 use fred::prelude::{SortedSetsInterface};
 use fred::prelude::*;
 use fred::error::Error;
+use std::sync::Arc;
+use async_trait::async_trait; 
 
 const DEFAULT_FEED_SIZE: i64 = 100;
 
+#[async_trait]
 pub trait PostCache {        
     async fn update_followers_feeds(&self, followers_ids: Vec<Uuid>, post: &Post) -> Result<i32, Error>;    
     async fn get_user_feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<String>, Error>;
@@ -21,17 +24,18 @@ pub trait PostCache {
     async fn check_feed_exists(&self, user_id: Uuid) -> Result<bool, Error>;
 }
 
-pub struct PostCacheImpl<'a> {
-    pool: &'a Pool
+pub struct PostCacheImpl {
+    pool: Arc<Pool>
 } 
 
-impl <'a> PostCacheImpl<'a> {
-    pub fn new(pool: &'a Pool) -> Self {
+impl PostCacheImpl {
+    pub fn new(pool: Arc<Pool>) -> Self {
         PostCacheImpl { pool }
     }
 }
 
-impl <'a> PostCache for PostCacheImpl<'a> {
+#[async_trait]
+impl PostCache for PostCacheImpl {
     
     async fn save_post(&self, post: &Post) -> Result<i32, Error> {        
         let item_key = format!("post:{}", post.id);            

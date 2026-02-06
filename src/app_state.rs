@@ -3,6 +3,10 @@ use tokio_postgres::{NoTls};
 use std::{env, time::Duration};
 use log::info;
 use fred::{prelude::{Error, ReconnectPolicy}, prelude::*};
+use crate::modules::post::{post_cache::{PostCacheImpl}, repository::{PostRepositoryImpl}};
+use crate::modules::friend::{repository::{FriendRepositoryImpl}};
+use crate::modules::post::{post_service::{PostService, PostServiceImpl}};
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -10,7 +14,7 @@ pub struct AppState {
     replica_pools: Vec<Pool>,
     pub secret: String,
     pub jwt_token_ttl_minutes: i64,
-    pub redis: fred::prelude::Pool,
+    pub post_service: Arc<dyn PostService + Send + Sync>
 }
 
 fn init_config(port_key: &str) -> Config {
@@ -45,7 +49,7 @@ async fn init_redis_pool() -> Result<fred::prelude::Pool, Error> {
 
 impl AppState {    
 
-    pub async fn init() -> Result<Self, String> {        
+    pub async fn init() -> anyhow::Result<Self> {        
         let master_pool = init_config(
                 "db_postgres_master_port"
             )
@@ -61,13 +65,20 @@ impl AppState {
             )
             .create_pool(Some(Runtime::Tokio1), NoTls).unwrap();
         replica_pool2.resize(10);        
+        let client = Arc::new(master_pool.get().await?);
+        let redis = Arc::new(init_redis_pool().await?);
+        let post_service = PostServiceImpl::new(
+            PostRepositoryImpl::new(Arc::clone(&client)),
+            FriendRepositoryImpl::new(Arc::clone(&client)),     
+            PostCacheImpl::new(redis)
+        );        
         Ok(
             AppState {
                 master_pool,
                 replica_pools: vec!(replica_pool1, replica_pool2),
                 secret: env::var("JWT_SECRET").unwrap(),
-                jwt_token_ttl_minutes: env::var("jwt_token_ttl_minutes").unwrap().parse().unwrap(),                
-                redis: init_redis_pool().await.unwrap()
+                jwt_token_ttl_minutes: env::var("jwt_token_ttl_minutes").unwrap().parse().unwrap(),                                
+                post_service: Arc::new(post_service)
             }
         )
     }

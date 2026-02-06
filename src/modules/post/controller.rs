@@ -3,7 +3,7 @@ use axum_extra::extract::{CookieJar, Host};
 use axum::http::Method;
 use async_trait::async_trait; 
 use openapi::models::{self};
-use crate::modules::post::{model, post_service::{PostService, PostServiceImpl}};
+use crate::modules::post::{model};
 use crate::modules::auth::auth;
 use crate::Application;
 use uuid::Uuid;
@@ -21,9 +21,8 @@ impl Post for Application {
         body: &Option<models::PostPostRequest>,
     ) -> Result<PostPostResponse, ()> {
         match body {
-            Some(post) => {                
-                let service = PostServiceImpl::new(self.state.get_master_client().await, &self.state.redis);
-                match service.create(claims.user_id, &post.text).await {
+            Some(post) => {                                                
+                match self.state.post_service.create(claims.user_id, &post.text).await {
                     Ok(post_id) => Ok(PostPostResponse::Status200(post_id.to_string())),
                     Err(e) => {
                         log::error!("Create post error: {:?}", e);
@@ -53,11 +52,7 @@ impl Post for Application {
             Ok(id) => id,
             Err(_) => return Ok(PostIdGetResponse::Status400)
         };    
-        let service = PostServiceImpl::new(
-            self.state.get_replica_client().await, 
-            &self.state.redis
-        );
-        match service.get(post_id).await {
+        match self.state.post_service.get(post_id).await {
             Ok(post) => Ok(PostIdGetResponse::Status200(to_post_dto(post))),
             Err(e) => {
                 log::error!("Get post error: {:?}", e);
@@ -86,9 +81,8 @@ impl Post for Application {
                 let post_id = match Uuid::parse_str(&post.id) {
                     Ok(id) => id,
                     Err(_) => return Ok(PostPutResponse::Status400)
-                };                
-                let service = PostServiceImpl::new(self.state.get_master_client().await, &self.state.redis);
-                match service.update(claims.user_id, post_id, &post.text).await {
+                };                                
+                match self.state.post_service.update(claims.user_id, post_id, &post.text).await {
                     Ok(()) => Ok(PostPutResponse::Status200),
                     Err(e) => {
                         log::error!("Update post error: {:?}", e);
@@ -118,9 +112,8 @@ impl Post for Application {
         let post_id = match Uuid::parse_str(&path_params.id) {
             Ok(id) => id,
             Err(_) => return Ok(PostIdDeleteResponse::Status400)
-        };
-        let service = PostServiceImpl::new(self.state.get_master_client().await, &self.state.redis);
-        match service.delete(claims.user_id, post_id).await {
+        };        
+        match self.state.post_service.delete(claims.user_id, post_id).await {
             Ok(()) => Ok(PostIdDeleteResponse::Status200),
             Err(e) => {
                 log::error!("Delete post error: {:?}", e);
@@ -143,9 +136,8 @@ impl Post for Application {
         _: &CookieJar,
         claims: &Self::Claims,
         query_params: &models::PostFeedGetQueryParams,
-    ) -> Result<PostFeedGetResponse, ()> {        
-        let service = PostServiceImpl::new(self.state.get_replica_client().await, &self.state.redis);
-        match service.feed(claims.user_id, query_params.limit, query_params.offset).await {
+    ) -> Result<PostFeedGetResponse, ()> {                
+        match self.state.post_service.feed(claims.user_id, query_params.limit, query_params.offset).await {
             Ok(posts) => Ok(PostFeedGetResponse::Status200(to_post_dtos(posts))),
             Err(e) => {
                 log::error!("Feed posts error: {:?}", e);

@@ -3,6 +3,7 @@ use deadpool_postgres::{Object};
 use thiserror::Error;
 use crate::modules::post::model::Post;
 use std::sync::Arc;
+use async_trait::async_trait; 
 
 #[derive(Error, Debug)]
 pub enum PostRepositoryError {
@@ -16,8 +17,9 @@ pub enum PostRepositoryError {
     Internal(String),
 }
 
+#[async_trait]
 pub trait PostRepository {
-    async fn create<'a>(&self, user_id: Uuid, text: &String) -> Result<Post, PostRepositoryError>;
+    async fn create(&self, user_id: Uuid, text: &String) -> Result<Post, PostRepositoryError>;
     async fn update(&self, user_id: Uuid, post_id: Uuid, text: &String) -> Result<Post, PostRepositoryError>;
     async fn delete(&self, user_id: Uuid, post_id: Uuid) -> Result<(), PostRepositoryError>;
     async fn get(&self, post_id: Uuid) -> Result<Post, PostRepositoryError>;
@@ -34,9 +36,10 @@ impl PostRepositoryImpl {
     }
 }
 
+#[async_trait]
 impl PostRepository for PostRepositoryImpl {    
 
-    async fn create<'a>(&self, user_id: Uuid, text: &String) -> Result<Post, PostRepositoryError> {
+    async fn create(&self, user_id: Uuid, text: &String) -> Result<Post, PostRepositoryError> {
         let res = self.client.query_one(
             "INSERT INTO posts (user_id, text) VALUES ($1, $2) RETURNING id, created_at", 
             &[&user_id, text]
@@ -49,7 +52,7 @@ impl PostRepository for PostRepositoryImpl {
     async fn update(&self, user_id: Uuid, id: Uuid, text: &String) -> Result<Post, PostRepositoryError> {
         let res = self.client.query_one(
             "UPDATE posts SET text=$1,updated_at=NOW() WHERE user_id=$2 AND id=$3 RETURNING updated_at", 
-            &[text, &user_id, &id]
+            &[&text, &user_id, &id]
         ).await?;    
         let timestamp: chrono::DateTime<chrono::Utc> = res.get("updated_at");                     
         Ok(Post {id, text: text.to_string(), author_user_id: user_id, timestamp})        

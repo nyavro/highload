@@ -2,6 +2,7 @@ use uuid::Uuid;
 use deadpool_postgres::{Object};
 use thiserror::Error;
 use std::sync::Arc;
+use async_trait::async_trait; 
 
 #[derive(Error, Debug)]
 pub enum FriendRepositoryError {
@@ -15,6 +16,7 @@ pub enum FriendRepositoryError {
     Internal(String),
 }
 
+#[async_trait]
 pub trait FriendRepository {
     async fn get_followers_ids(&self, user_id: Uuid) -> Result<Vec<Uuid>, FriendRepositoryError>;   
 }
@@ -29,6 +31,7 @@ impl FriendRepositoryImpl {
     }
 }
 
+#[async_trait]
 impl FriendRepository for FriendRepositoryImpl {    
 
     async fn get_followers_ids(&self, user_id: Uuid) -> Result<Vec<Uuid>, FriendRepositoryError> {
