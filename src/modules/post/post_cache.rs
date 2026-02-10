@@ -6,9 +6,11 @@ use fred::prelude::*;
 use fred::error::Error;
 use std::sync::Arc;
 use async_trait::async_trait; 
+use mockall::automock;
 
 const DEFAULT_FEED_SIZE: i64 = 100;
 
+#[automock]
 #[async_trait]
 pub trait PostCache {        
     async fn update_followers_feeds(&self, followers_ids: Vec<Uuid>, post: &Post) -> Result<i32, Error>;    

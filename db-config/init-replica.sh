@@ -3,8 +3,8 @@ set -e
 
 PGDATA_PATH="/var/lib/postgresql/data"
 
-echo 'Waiting for master...'
 until pg_isready -h postgres-master -p 5432 -U pguser -d highload; do
+  echo "Waiting for master..."
   sleep 2
 done
 echo 'Master is available'
@@ -12,6 +12,9 @@ echo 'Master is available'
 if [ ! "$(ls -A $PGDATA_PATH)" ]; then
     echo 'Init replica with pg_basebackup...'
     echo 'Slot is:'$PG_SLOT
+
+    rm -rf ${PGDATA_PATH:?}/*
+    
     PGPASSWORD=$REPLICATOR_PASSWORD pg_basebackup \
       -h postgres-master \
       -D $PGDATA_PATH \

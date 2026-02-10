@@ -3,6 +3,7 @@ use deadpool_postgres::{Object};
 use thiserror::Error;
 use std::sync::Arc;
 use async_trait::async_trait; 
+use mockall::automock;
 
 #[derive(Error, Debug)]
 pub enum FriendRepositoryError {
@@ -16,6 +17,7 @@ pub enum FriendRepositoryError {
     Internal(String),
 }
 
+#[automock]
 #[async_trait]
 pub trait FriendRepository {
     async fn get_followers_ids(&self, user_id: Uuid) -> Result<Vec<Uuid>, FriendRepositoryError>;   

@@ -4,6 +4,7 @@ use thiserror::Error;
 use crate::modules::post::model::Post;
 use std::sync::Arc;
 use async_trait::async_trait; 
+use mockall::automock;
 
 #[derive(Error, Debug)]
 pub enum PostRepositoryError {
@@ -17,6 +18,7 @@ pub enum PostRepositoryError {
     Internal(String),
 }
 
+#[automock]
 #[async_trait]
 pub trait PostRepository {
     async fn create(&self, user_id: Uuid, text: &String) -> Result<Post, PostRepositoryError>;
