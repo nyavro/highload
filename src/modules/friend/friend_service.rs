@@ -35,12 +35,12 @@ pub async fn add_friend(mut client: Object, initiator_user_id: Uuid, user_id: Uu
     }
     let tx = client.transaction().await?;
     let res = tx.query_one(
-        "SELECT count(*) FROM friends WHERE user_id = $2 AND friend_id = $1",
+        "SELECT count(*) as links FROM friends WHERE user_id = $2 AND friend_id = $1",
         &[&initiator_user_id, &user_id]
     ).await?;
-    let count: i32 = res.get(0);    
+    let count: i64 = res.get("links");    
     let rows_affected = tx.execute(
-        "INSERT INTO friends (user_id, friend_id, status) VALUES($1, $2) ON CONFLICT (user_id, friend_id) DO NOTHING",
+        "INSERT INTO friends (user_id, friend_id) VALUES($1, $2) ON CONFLICT (user_id, friend_id) DO NOTHING",
         &[&user_id, &initiator_user_id]
     ).await?;
     tx.commit().await?;

@@ -13,13 +13,14 @@ const DEFAULT_FEED_SIZE: i64 = 100;
 #[automock]
 #[async_trait]
 pub trait PostCache {        
-    async fn update_followers_feeds(&self, followers_ids: Vec<Uuid>, post: &Post) -> Result<i32, Error>;    
+    async fn update_followers_feeds(&self, followers_ids: Vec<Uuid>, post: &Post) -> Result<(), Error>;    
     async fn get_user_feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<String>, Error>;
     async fn save_user_feed(&self, user_id: Uuid, posts: &Vec<Post>) -> Result<(), Error>;
 
     async fn get_posts_by_ids(&self, ids: Vec<String>) -> Result<Vec<Post>, Error>;        
-    async fn save_post(&self, post: &Post) -> Result<i32, Error>;
-    async fn delete_post(&self, post_id: &Uuid) -> Result<i32, Error>;
+    async fn save_post(&self, post: &Post) -> Result<(), Error>;
+    async fn save_posts(&self, posts: &Vec<Post>) -> Result<(), Error>;
+    async fn delete_post(&self, post_id: &Uuid) -> Result<(), Error>;
     async fn get_post(&self, post_id: &Uuid) -> Result<Option<Post>, Error>;
 
     async fn mark_feed_exists(&self, user_id: Uuid) -> Result<(), Error>;
@@ -39,13 +40,28 @@ impl PostCacheImpl {
 #[async_trait]
 impl PostCache for PostCacheImpl {
     
-    async fn save_post(&self, post: &Post) -> Result<i32, Error> {        
+    async fn save_post(&self, post: &Post) -> Result<(), Error> {        
         let item_key = format!("post:{}", post.id);            
-        self.pool.next().hset::<i32, _, _>(
+        self.pool.next().hset(
             "posts_data_store", //TODO
             (item_key, serde_json::to_string(&post).expect("Failed to serialize post"))
         ).await         
     }   
+
+    async fn save_posts(&self, posts: &Vec<Post>) -> Result<(), Error> {
+        let entries: Vec<(String, String)> = posts
+            .iter()
+            .map(|post| {
+                let item_key = format!("post:{}", post.id);
+                let json = serde_json::to_string(post).expect("Failed to serialize post");
+                (item_key, json)
+            })
+            .collect();
+        if entries.is_empty() {
+            return Ok(());
+        }        
+        self.pool.next().hset("posts_data_store", entries).await
+    }
 
     async fn get_post(&self, post_id: &Uuid) -> Result<Option<Post>, Error> {            
         let item_key = format!("post:{}", post_id);            
@@ -58,21 +74,21 @@ impl PostCache for PostCacheImpl {
             )
     }   
 
-    async fn delete_post(&self, post_id: &Uuid) -> Result<i32, Error> {
+    async fn delete_post(&self, post_id: &Uuid) -> Result<(), Error> {
         let item_key = format!("post:{}", post_id);            
-        self.pool.next().hdel::<i32, _, _>(
+        self.pool.next().hdel(
             "posts_data_store", //TODO
             item_key
         ).await
     }
 
-    async fn update_followers_feeds(&self, followers_ids: Vec<Uuid>, post: &Post) -> Result<i32, Error> {      
+    async fn update_followers_feeds(&self, followers_ids: Vec<Uuid>, post: &Post) -> Result<(), Error> {      
         let pipeline = self.pool.next().pipeline();        
         for follower_id in &followers_ids {
             let cache_key = format!("highload/post/feed/ids/{}", follower_id);                                                        
-            pipeline.zadd::<i32, _, _>(cache_key, None, None, false, false, (post.timestamp.timestamp() as f64, post.id.to_string()));
+            let _ = pipeline.zadd::<(), _, _>(cache_key, None, None, false, false, (post.timestamp.timestamp() as f64, post.id.to_string())).await;
         }
-        pipeline.last::<i32>().await
+        pipeline.last().await
     }
 
     async fn get_user_feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<String>, Error> {

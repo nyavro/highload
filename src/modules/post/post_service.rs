@@ -1,11 +1,10 @@
 use uuid::Uuid;
 use thiserror::Error;
-use crate::modules::post::{model::Post, post_cache::{PostCache, MockPostCache}, repository::{PostRepository, MockPostRepository, PostRepositoryError}};
-use crate::modules::friend::{repository::{FriendRepository, MockFriendRepository}};
-use log::{error, warn};
+use crate::modules::post::{model::Post, post_cache::{PostCache}, repository::{PostRepository, PostRepositoryError}};
+use crate::modules::friend::{repository::{FriendRepository}};
+use log::{error, warn, info};
 use crate::modules::ext::extensions::ResultExt;
 use async_trait::async_trait; 
-use chrono::{DateTime, Utc};
 
 #[derive(Error, Debug)]
 pub enum PostServiceError {
@@ -115,14 +114,18 @@ where
 
     async fn feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<Post>, PostServiceError> {        
         if let Ok(exists) = self.post_cache.check_feed_exists(user_id).await && exists {
+            info!("Cache hit: {}", user_id);
             if let Ok(ids) = self.post_cache.get_user_feed(user_id, limit, offset).await {
-                if let Ok(posts) = self.post_cache.get_posts_by_ids(ids).await {
+                info!("Ids from cache: {:?}", ids);
+                let ids_len = ids.len();
+                if let Ok(posts) = self.post_cache.get_posts_by_ids(ids).await && posts.len() == ids_len {
                     return Ok(posts);
                 }
             }
         }       
         let posts = self.fetch_from_db(user_id, limit, offset).await?;
         if !posts.is_empty() {
+            self.post_cache.save_posts(&posts).await.warn(format!("Failed to save posts {}", user_id));
             self.post_cache.save_user_feed(user_id, &posts).await.warn(format!("Failed to save user's {} feed", user_id));
             self.post_cache.mark_feed_exists(user_id).await.warn(format!("Failed to mark feed exists. Feed {}", user_id));
         }        
@@ -155,8 +158,8 @@ mod tests {
             .times(1)
             .returning(|_| Ok(vec![Uuid::parse_str("67e55044-10b1-426f-9247-bb680e5fe0c8").unwrap()]));
 
-        mock_cache.expect_save_post().returning(|_| Ok(0));
-        mock_cache.expect_update_followers_feeds().returning(|_, _| Ok(0));        
+        mock_cache.expect_save_post().returning(|_| Ok(()));
+        mock_cache.expect_update_followers_feeds().returning(|_, _| Ok(()));        
 
         let result = PostServiceImpl::new(mock_repo, mock_friends, mock_cache).create(u_id, &"Hello world".to_string()).await;
         assert!(result.is_ok());

@@ -34,7 +34,7 @@ async fn init_redis_pool() -> Result<fred::prelude::Pool, Error> {
         .ok()
         .and_then(|v| v.parse::<usize>().ok())
         .unwrap_or(8);
-    let config = fred::prelude::Config::from_url("redis://127.0.0.1:6379/").expect("Failed to create redis config from url");
+    let config = fred::prelude::Config::from_url("redis://:secure_password@127.0.0.1:6379/").expect("Failed to create redis config from url");
     let pool = fred::prelude::Builder::from_config(config)
         .with_connection_config(|config| {
             config.connection_timeout = Duration::from_secs(10);
