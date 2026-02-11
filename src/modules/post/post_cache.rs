@@ -65,6 +65,7 @@ impl FeedCache for PostCacheImpl {
         let pipeline = self.pool.next().pipeline();        
         for follower_id in &followers_ids {            
             let _ = pipeline.zadd::<(), _, _>(self.get_feed_key(follower_id), None, None, false, false, (post.timestamp.timestamp() as f64, post.id.to_string())).await;
+            let _: () = pipeline.set(self.get_mark_key(follower_id), "1", Some(Expiration::EX(3600)), None, false).await?;
         }
         pipeline.last().await
     }
@@ -115,14 +116,22 @@ impl UserPostCache for PostCacheImpl {
     }   
 
     async fn save_posts(&self, posts: &Vec<Post>) -> Result<(), Error> {
-        let mut entries = Vec::with_capacity(posts.len());
+        if posts.is_empty() { 
+            return Ok(()); 
+        }
+        let pipeline = self.pool.next().pipeline();
         for post in posts {
             let json = serde_json::to_string(post)
-                .map_err(|e| Error::new(fred::error::ErrorKind::Parse, e.to_string()))?;
-            entries.push((self.get_post_key(&post.id.to_string()), json));
+                .map_err(|e| Error::new(fred::error::ErrorKind::Parse, e.to_string()))?;                        
+            let _: () = pipeline.set(
+                self.get_post_key(&post.id.to_string()), 
+                json, 
+                Some(Expiration::EX(POST_CACHE_TTL_SECONDS)), 
+                None, 
+                false
+            ).await?;
         }
-
-        self.pool.next().mset(entries).await
+        pipeline.last().await
     }
 
     async fn get_post(&self, post_id: &Uuid) -> Result<Option<Post>, Error> {            
