@@ -9,6 +9,7 @@ use async_trait::async_trait;
 use mockall::automock;
 
 const DEFAULT_FEED_SIZE: i64 = 1000;
+const POST_CACHE_TTL_SECONDS: i64 = 86400;
 
 #[automock]
 #[async_trait]
@@ -94,65 +95,64 @@ impl FeedCache for PostCacheImpl {
     }  
 }
 
-const USER_POST_CACHE_KEY: &'static str = "posts_data_store";
+impl PostCacheImpl {
+    fn get_post_key(&self, post_id: &String) -> String {
+        format!("highload/post:{}", post_id)
+    }
+}
 
 #[async_trait]
 impl UserPostCache for PostCacheImpl {
     
-    async fn save_post(&self, post: &Post) -> Result<(), Error> {        
-        let item_key = format!("post:{}", post.id);            
-        self.pool.next().hset(
-            USER_POST_CACHE_KEY,
-            (item_key, serde_json::to_string(&post).expect("Failed to serialize post"))
-        ).await         
+    async fn save_post(&self, post: &Post) -> Result<(), Error> {                                    
+        self.pool.next().set(
+            self.get_post_key(&post.id.to_string()),
+            serde_json::to_string(&post).map_err(|_| Error::new(ErrorKind::Parse, "Serde error"))?,
+            Some(Expiration::EX(POST_CACHE_TTL_SECONDS)),
+            None,
+            false
+        ).await          
     }   
 
     async fn save_posts(&self, posts: &Vec<Post>) -> Result<(), Error> {
-        let entries: Vec<(String, String)> = posts
-            .iter()
-            .map(|post| {
-                let item_key = format!("post:{}", post.id);
-                let json = serde_json::to_string(post).expect("Failed to serialize post");
-                (item_key, json)
-            })
-            .collect();
-        if entries.is_empty() {
-            return Ok(());
-        }        
-        self.pool.next().hset(USER_POST_CACHE_KEY, entries).await
+        let mut entries = Vec::with_capacity(posts.len());
+        for post in posts {
+            let json = serde_json::to_string(post)
+                .map_err(|e| Error::new(fred::error::ErrorKind::Parse, e.to_string()))?;
+            entries.push((self.get_post_key(&post.id.to_string()), json));
+        }
+
+        self.pool.next().mset(entries).await
     }
 
     async fn get_post(&self, post_id: &Uuid) -> Result<Option<Post>, Error> {            
-        let item_key = format!("post:{}", post_id);            
-        self.pool.next().hget::<Option<String>, _, _>(
-            USER_POST_CACHE_KEY,
-            item_key
-        ).await
-            .map(|maybe_json|
-                maybe_json.map(|post_json| serde_json::from_str(&post_json).expect("Failed to deserialize post"))
-            )
+        let item_key = self.get_post_key(&post_id.to_string());  
+        let maybe_json: Option<String> = self.pool.next().get(item_key).await?;                      
+        match maybe_json {
+            Some(json) => {
+                let post = serde_json::from_str(&json)
+                    .map_err(|e| Error::new(fred::error::ErrorKind::Parse, e.to_string()))?;
+                Ok(Some(post))
+            }
+            None => Ok(None),
+        }
     }   
 
-    async fn delete_post(&self, post_id: &Uuid) -> Result<(), Error> {
-        let item_key = format!("post:{}", post_id);            
-        self.pool.next().hdel(
-            USER_POST_CACHE_KEY,
-            item_key
-        ).await
+    async fn delete_post(&self, post_id: &Uuid) -> Result<(), Error> {        
+        self.pool.next().del(self.get_post_key(&post_id.to_string())).await
     }
 
     async fn get_posts_by_ids(&self, ids: Vec<String>) -> Result<Vec<Post>, Error> {
         if ids.is_empty() {
             return Ok(vec!())
         }         
-        self.pool.next().hmget::<Vec<Option<String>>, _, _>(USER_POST_CACHE_KEY, ids).await
-            .map(|json_posts| 
-                json_posts
-                    .into_iter()
-                    .flatten() 
-                    .filter_map(|s| serde_json::from_str(&s).ok())
-                    .collect()
-            )        
+        let keys: Vec<String> = ids.iter().map(|id| self.get_post_key(id)).collect();
+        let json_posts: Vec<Option<String>> = self.pool.next().mget(keys).await?;
+        
+        Ok(json_posts.into_iter()
+            .flatten()
+            .filter_map(|s| serde_json::from_str(&s).ok())
+            .collect())
     }   
 }
 
