@@ -547,6 +547,105 @@
           }
         }
       }
+    },
+    "/dialog/{user_id}/send": {      
+      "post": {
+        "tags": ["dialog"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "schema": {
+              "$ref": "#/components/schemas/UserId"
+            },
+            "required": true,
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["text"],
+                "properties": {
+                  "text": {
+                    "$ref": "#/components/schemas/DialogMessageText"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешно отправлено сообщение"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/5xx"
+          },
+          "503": {
+            "$ref": "#/components/responses/5xx"
+          }
+        }
+      }
+    },
+    "/dialog/{user_id}/list": {      
+      "get": {
+        "tags": ["dialog"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "schema": {
+              "$ref": "#/components/schemas/UserId"
+            },
+            "required": true,
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Диалог между двумя пользователями",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DialogMessage"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/5xx"
+          },
+          "503": {
+            "$ref": "#/components/responses/5xx"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -670,6 +769,26 @@
           },
           "author_user_id": {
             "$ref": "#/components/schemas/UserId"
+          }
+        }
+      },
+      "DialogMessageText": {
+        "type": "string",
+        "description": "Текст сообщения",
+        "example": "Привет, как дела?"
+      },
+      "DialogMessage": {
+        "type": "object",
+        "required": ["from", "to", "text"],
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/UserId"
+          },
+          "to": {
+            "$ref": "#/components/schemas/UserId"
+          },
+          "text": {
+            "$ref": "#/components/schemas/DialogMessageText"
           }
         }
       }

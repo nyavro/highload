@@ -1,5 +1,6 @@
 use openapi::apis::auth::{Auth, LoginPostResponse};
-use axum_extra::extract::{CookieJar, Host};
+use axum_extra::headers::Host;
+use axum_extra::extract::CookieJar;
 use axum::http::Method;
 use async_trait::async_trait; 
 use openapi::models::{self};
