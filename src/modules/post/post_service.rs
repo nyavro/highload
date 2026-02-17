@@ -36,7 +36,7 @@ where
     R: PostRepository,
     F: FriendRepository,
     P: PostCache {    
-    pub fn new<'a>(repository: R, friends_repository: F, post_cache: P) -> Self {
+    pub fn new(repository: R, friends_repository: F, post_cache: P) -> Self {
         PostServiceImpl { 
             repository, 
             friends_repository,
