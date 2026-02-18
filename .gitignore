@@ -2,4 +2,8 @@ social/target/**
 social/api/**
 social/load-testing/*.csv
 social/redis_data/**
-.env.secret
+social/.env.secret
+
+messenger/target/** 
+messenger/api/**
+messenger/.env.secret

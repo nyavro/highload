@@ -1,0 +1,25 @@
+[package]
+name = "messenger"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+openapi = { path = "api" }
+dotenv = "0.15.0"
+log = "0.4.29"
+rand = "0.10.0"
+tokio = { version = "1.49.0", features = ["full"] }
+tokio-postgres = { version = "0.7.16", features = ["with-chrono-0_4", "with-uuid-1"] } 
+uuid = { version = "1.18.1", features = ["v4", "v7"] }
+async-trait = "0.1.89"
+axum = "0.8.8"
+axum-extra = { version = "0.12.5", features = ["cookie", "query", "typed-header"] }
+deadpool-postgres = "0.14.1"
+thiserror = "2.0.18"
+refinery = { version = "0.9.0", features = ["tokio-postgres"] }
+env_logger = "0.11.9"
+anyhow = "1.0.101"
+rand_core = "0.10.0"
+serde = "1.0.228"
+jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
+chrono = "0.4.43"
