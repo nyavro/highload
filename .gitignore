@@ -1,5 +1,5 @@
-target/** 
-api/**
+social/target/** 
+social/api/**
+social/load-testing/*.csv
+social/redis_data/**
 .env.secret
-load-testing/*.csv
-redis_data/**
