@@ -19,10 +19,10 @@ async fn main() -> Result<(), Error> {
     let app_state = Arc::new(AppState::init().await.unwrap());
     migrations::run_migrations(app_state.clone()).await;
     load_metric_utils::generate_load_data(app_state.clone()).await;    
-    let app = openapi::server::new(Application::new (app_state));    
-    let port = 3000;
+    let app = openapi::server::new(Application::new(Arc::clone(&app_state)));        
+    let port = app_state.port;
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await.unwrap();
-    info!("Server is running on port {} {}", port, port);
+    info!("Server is running on port {}", port);
     axum::serve(listener, app).await.unwrap();
     Ok(())
 } 

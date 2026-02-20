@@ -1,8 +1,0 @@
-POST http://localhost:3000/dialog/932e52f3-836f-41fb-ad1c-35c9d93700ad/send
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiMjNiNTNiZDctYTZiNy00ZDg5LTk5N2MtOTQ2YmQ3Yjc0ZWY4IiwiZXhwIjoxNzcxMzQzMTUyfQ.LQJ0-VwMeT8v_nPCxG_xNJGspBQ3sTKNW8ToQCf5OkM
-content-type: application/json
-accept: application/json
-
-{    
-    "text": "Thank you! Just fine)"
-}

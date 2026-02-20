@@ -1,9 +1,9 @@
 use async_trait::async_trait; 
 use thiserror::Error;
+use deadpool_postgres::Pool;
 use crate::modules::dialog::{repository::DialogRepositoryImpl, service::DialogServiceImpl, domain_models};
 use uuid::Uuid;
 use std::sync::Arc;
-use deadpool_postgres::{Object};
 
 #[async_trait]
 pub trait DialogService {
@@ -11,7 +11,7 @@ pub trait DialogService {
     async fn list_messages(&self, from: Uuid, to: Uuid) -> Result<Vec<domain_models::DialogMessage>, DialogServiceError>;
 }
 
-pub fn new (client: Arc<Object>) -> DialogServiceImpl<DialogRepositoryImpl> {
+pub fn new (client: Arc<Pool>) -> DialogServiceImpl<DialogRepositoryImpl> {
     DialogServiceImpl::new(
         DialogRepositoryImpl::new(client)
     )

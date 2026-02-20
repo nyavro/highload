@@ -5,10 +5,11 @@ use crate::modules::dialog::init::{DialogService, new as new_dialog};
 use std::sync::Arc;
 
 #[derive(Clone)]
-  pub struct AppState {
-    master_pool: Pool,    
+  pub struct AppState {    
+    master_pool: Arc<Pool>, 
     pub secret: String,
-    pub dialog_service: Arc<dyn DialogService + Send + Sync>
+    pub port: i32,
+    pub dialog_service: Arc<dyn DialogService + Send + Sync>,    
 }
 
 fn init_config(port_key: &str) -> Config {
@@ -31,16 +32,17 @@ impl AppState {
             )
             .create_pool(Some(Runtime::Tokio1), NoTls).unwrap();
         master_pool.resize(10);        
-        let client = Arc::new(master_pool.get().await?);         
+        let pool = Arc::new(master_pool);
+        let port = env::var("APPLICATION_PORT").ok().map(|port| port.parse().unwrap()).unwrap();
         Ok(
             AppState {
-                master_pool,
+                master_pool: Arc::clone(&pool),
+                port,                
                 secret: env::var("JWT_SECRET").unwrap(),                
-                dialog_service: Arc::new(new_dialog(Arc::clone(&client)))
+                dialog_service: Arc::new(new_dialog(Arc::clone(&pool)))
             }
         )
     }
-
     pub async fn get_master_client(&self) -> Object {
         self.master_pool.get().await.unwrap()
     }    

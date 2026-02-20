@@ -1,0 +1,4 @@
+GET http://localhost:3001/dialog/b9b0f7cf-aa97-47b9-a046-6450874cd8b8/list
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiOTI1NmE0MTItMGYwOC00ZDU5LWFjNDEtODM1NTM5MzJjMmI3IiwiZXhwIjoxNzcxNTgwNTE5fQ.oInmZZ_yd88OAXnHYMTWkzvNbS-QTSWRu_0Yc51IeSU
+content-type: application/json
+accept: application/json

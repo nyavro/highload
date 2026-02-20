@@ -1,0 +1,8 @@
+POST http://localhost:3000/login
+content-type: application/json
+accept: application/json
+
+{
+    "id": "9256a412-0f08-4d59-ac41-83553932c2b7",
+    "password": "secret"
+}

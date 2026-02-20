@@ -8,7 +8,7 @@ use axum::http::Method;
 use crate::modules::auth::auth;
 use crate::modules::dialog;
 use uuid::Uuid;
-use log::info;
+use log::{info, error};
 
 #[async_trait]
 impl Dialog for Application {
@@ -47,6 +47,7 @@ impl Dialog for Application {
         path_params: &models::DialogUserIdSendPostPathParams,
         body: &Option<models::DialogUserIdSendPostRequest>,
     ) -> Result<DialogUserIdSendPostResponse, ()> {
+        info!("Post message handling");
         let user_id = match Uuid::parse_str(&path_params.user_id) {
             Ok(id) => id,
             Err(_) => return Ok(DialogUserIdSendPostResponse::Status400)
@@ -54,7 +55,10 @@ impl Dialog for Application {
         if let Some(message) = body {
             match self.state.dialog_service.send_message(claims.user_id, user_id, &message.text).await {
                 Ok(_) => Ok(DialogUserIdSendPostResponse::Status200),
-                Err(err) => Err(())
+                Err(err) => {
+                    error!("Failed to send message: {:?}", err);
+                    Err(())
+                }
             }
         } else {
             Ok(DialogUserIdSendPostResponse::Status400)

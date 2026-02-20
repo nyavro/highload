@@ -6,7 +6,6 @@ use fred::{prelude::{Error, ReconnectPolicy}, prelude::*};
 use crate::modules::post::{post_cache::{PostCacheImpl}, repository::{PostRepositoryImpl}};
 use crate::modules::friend::{repository::{FriendRepositoryImpl}};
 use crate::modules::post::{post_service::{PostService, PostServiceImpl}};
-use crate::modules::dialog::init::{DialogService, new as new_dialog};
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -15,8 +14,8 @@ use std::sync::Arc;
     replica_pools: Vec<Pool>,
     pub secret: String,
     pub jwt_token_ttl_minutes: i64,
-    pub post_service: Arc<dyn PostService + Send + Sync>,
-    pub dialog_service: Arc<dyn DialogService + Send + Sync>
+    pub post_service: Arc<dyn PostService + Send + Sync>,    
+    pub port: i32
 }
 
 fn init_config(port_key: &str) -> Config {
@@ -74,14 +73,15 @@ impl AppState {
             FriendRepositoryImpl::new(Arc::clone(&client)),     
             PostCacheImpl::new(redis)
         );        
+        let port = env::var("APPLICATION_PORT").ok().map(|port| port.parse().unwrap()).unwrap();
         Ok(
             AppState {
+                port,
                 master_pool,
                 replica_pools: vec!(replica_pool1, replica_pool2),
                 secret: env::var("JWT_SECRET").unwrap(),
                 jwt_token_ttl_minutes: env::var("jwt_token_ttl_minutes").unwrap().parse().unwrap(),                                
-                post_service: Arc::new(post_service),
-                dialog_service: Arc::new(new_dialog(Arc::clone(&client)))
+                post_service: Arc::new(post_service),                
             }
         )
     }

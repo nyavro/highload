@@ -1,0 +1,1 @@
+docker-compose -p citus up --scale worker=8 -d

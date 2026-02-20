@@ -10,6 +10,8 @@ mod migrations;
 mod application;
 mod modules;
 
+use crate::modules::mock;
+
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     dotenv::from_filename(".env.secret").ok();    
@@ -17,10 +19,11 @@ async fn main() -> Result<(), Error> {
     env_logger::init();        
     let app_state = Arc::new(AppState::init().await.unwrap());
     migrations::run_migrations(app_state.clone()).await;
-    let app = openapi::server::new(Application::new (app_state));    
-    let port = 3000;
+    // mock::service::generate_messages(Arc::clone(&app_state)).await;
+    let app = openapi::server::new(Application::new(Arc::clone(&app_state)));        
+    let port = app_state.port;
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await.unwrap();
-    info!("Server is running on port {} {}", port, port);
+    info!("Server is running on port {}", port);
     axum::serve(listener, app).await.unwrap();
     Ok(())
 } 

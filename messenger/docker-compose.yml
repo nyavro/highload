@@ -1,62 +1,39 @@
 services:
   master:
     container_name: "${COMPOSE_PROJECT_NAME:-citus}_master"
-    image: 'citusdata/citus:12.1' 
+    image: 'citusdata/citus:12.1.3' 
     ports:
-      - "${MASTER_EXTERNAL_PORT:-5432}:5432"
+      - "${MASTER_EXTERNAL_PORT:-5532}:5432"
     labels: [ "com.citusdata.role=master" ]
     environment: &AUTH
       POSTGRES_DB: "messenger"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "pgpassword"
-      CITUS_PASSWORD: "pgpassword"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-pgpassword}"
+      CITUS_PASSWORD: "${POSTGRES_PASSWORD:-pgpassword}"
+      POSTGRES_HOST_AUTH_METHOD: "${POSTGRES_HOST_AUTH_METHOD:-trust}"
     volumes:
       - citus_master_data:/var/lib/postgresql/data
-      - ./db-config/init.sql:/docker-entrypoint-initdb.d/init.sql       
-    entrypoint: >
-      sh -c "
-      echo 'Waiting for workers...';
-      until pg_isready -h worker1 -p 5432 && pg_isready -h worker2 -p 5432; do
-        echo 'Postgres on workers is not ready yet...';
-        sleep 2;
-      done;
-      echo 'Workers are UP! Starting master...';
-      exec /usr/local/bin/docker-entrypoint.sh postgres"
 
-  worker1:
-    container_name: "${COMPOSE_PROJECT_NAME:-citus}_worker1"
-    image: 'citusdata/citus:12.1'
-    labels: [ "com.citusdata.role=worker" ]
+  worker:
+    image: "citusdata/citus:12.1.3"
+    labels: ["com.citusdata.role=Worker"]
+    depends_on: [manager]
     environment: *AUTH
-    depends_on: [ master ]
+    command: "/wait-for-manager.sh"
     volumes:
-      - citus_worker1_data:/var/lib/postgresql/data
-      - ./db-config/init_worker.sql:/docker-entrypoint-initdb.d/init.sql
+      - healthcheck-volume:/healthcheck      
 
-  worker2:
-    container_name: "${COMPOSE_PROJECT_NAME:-citus}_worker2"
-    image: 'citusdata/citus:12.1'
-    labels: [ "com.citusdata.role=worker" ]
-    environment: *AUTH
-    depends_on: [ master ]
+  manager:
+    container_name: "${COMPOSE_PROJECT_NAME:-citus}_manager"
+    image: "citusdata/membership-manager:0.3.0"
     volumes:
-      - citus_worker2_data:/var/lib/postgresql/data
-      - ./db-config/init_worker.sql:/docker-entrypoint-initdb.d/init.sql
-
-  # manager:
-  #   container_name: "${COMPOSE_PROJECT_NAME:-citus}_manager"
-  #   image: 'citusdata/membership-manager:0.3.0'
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #   tmpfs:
-  #     - /healthcheck
-  #   depends_on: [ master ]
-  #   environment:
-  #     <<: *AUTH
-  #     CITUS_HOST: master
-  #     PGDATABASE: messenger
+      - "${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock"
+      - healthcheck-volume:/healthcheck
+    depends_on: [master]
+    environment: 
+      <<: *AUTH
+      POSTGRES_DB: "messenger"
 
 volumes:
-  citus_master_data:
-  citus_worker1_data:
-  citus_worker2_data:      
+  healthcheck-volume:
+  citus_master_data:    

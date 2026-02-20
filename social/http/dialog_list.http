@@ -1,4 +1,0 @@
-GET http://localhost:3000/dialog/23b53bd7-a6b7-4d89-997c-946bd7b74ef8/list
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiOTMyZTUyZjMtODM2Zi00MWZiLWFkMWMtMzVjOWQ5MzcwMGFkIiwiZXhwIjoxNzcxMzQzMDY2fQ.0BlPTRZjQ9W4WysKtUF01cb5zVLtoZ18WulQhpVLIZE
-content-type: application/json
-accept: application/json

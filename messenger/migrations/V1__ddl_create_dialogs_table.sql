@@ -8,3 +8,5 @@ CREATE TABLE dialogs(
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (owner_id, to_id, message_id)
 );
+
+SELECT create_distributed_table('dialogs', 'owner_id');

@@ -1,6 +1,7 @@
 use async_trait::async_trait; 
 use crate::modules::dialog::{init::{DialogService, DialogRepository, DialogServiceError}, domain_models};
 use uuid::Uuid;
+use log::info;
 
 pub struct DialogServiceImpl<R> 
 where
@@ -20,6 +21,7 @@ impl <R> DialogService for DialogServiceImpl<R>
 where R: DialogRepository + Send + Sync {
 
     async fn send_message(&self, from: Uuid, to: Uuid, text: &String) -> Result<Uuid, DialogServiceError> {
+        info!("Dialog service processing message post");
         Ok(self.repository.send(from, to, text).await?)
     }
 
