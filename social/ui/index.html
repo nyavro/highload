@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Feed</title>
+</head>
+<body>
+    <h1>Real-time posts</h1>
+    <div id="log"></div>
+    <script>
+        const ws = new WebSocket('ws://localhost:3000/post/feed/posted');
+        ws.onmessage = (event) => {
+            const div = document.getElementById('log');
+            div.innerHTML = '<p>' + event.data + '</p>' + div.innerHTML;
+        };
+        ws.onopen = () => console.log('Connected');
+        ws.onclose = () => console.log('Disconnected');
+    </script>
+</body>
+</html>

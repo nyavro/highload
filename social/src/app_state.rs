@@ -7,6 +7,8 @@ use crate::modules::post::{post_cache::{PostCacheImpl}, repository::{PostReposit
 use crate::modules::friend::{repository::{FriendRepositoryImpl}};
 use crate::modules::post::{post_service::{PostService, PostServiceImpl}};
 use std::sync::Arc;
+use tokio::sync::broadcast;
+use openapi::models::Post;
 
 #[derive(Clone)]
   pub struct AppState {
@@ -15,7 +17,8 @@ use std::sync::Arc;
     pub secret: String,
     pub jwt_token_ttl_minutes: i64,
     pub post_service: Arc<dyn PostService + Send + Sync>,    
-    pub port: i32
+    pub port: i32,    
+    pub tx: broadcast::Sender<Post>,
 }
 
 fn init_config(port_key: &str) -> Config {
@@ -72,8 +75,9 @@ impl AppState {
             PostRepositoryImpl::new(Arc::clone(&client)),
             FriendRepositoryImpl::new(Arc::clone(&client)),     
             PostCacheImpl::new(redis)
-        );        
+        );                
         let port = env::var("APPLICATION_PORT").ok().map(|port| port.parse().unwrap()).unwrap();
+        let (tx, _) = broadcast::channel::<Post>(100);
         Ok(
             AppState {
                 port,
@@ -81,7 +85,8 @@ impl AppState {
                 replica_pools: vec!(replica_pool1, replica_pool2),
                 secret: env::var("JWT_SECRET").unwrap(),
                 jwt_token_ttl_minutes: env::var("jwt_token_ttl_minutes").unwrap().parse().unwrap(),                                
-                post_service: Arc::new(post_service),                
+                post_service: Arc::new(post_service), 
+                tx               
             }
         )
     }
