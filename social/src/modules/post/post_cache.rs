@@ -14,7 +14,8 @@ const POST_CACHE_TTL_SECONDS: i64 = 86400;
 #[automock]
 #[async_trait]
 pub trait FeedCache {
-    async fn update_followers_feeds(&self, followers_ids: Vec<Uuid>, post: &Post) -> Result<(), Error>;    
+    async fn process_save(&self, followers_ids: &Vec<Uuid>, post: &Post) -> Result<(), Error>;
+    async fn process_delete(&self, followers_ids: &Vec<Uuid>, post_id: &Uuid) -> Result<(), Error>;    
     async fn get_user_feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<String>, Error>;
     async fn save_user_feed(&self, user_id: Uuid, posts: &Vec<Post>) -> Result<(), Error>;
 }
@@ -56,16 +57,34 @@ impl PostCacheImpl {
     fn get_feed_key(&self, user_id: &Uuid) -> String {
         format!("highload/post/feed/ids/{}", user_id)
     }
+    fn get_post_key(&self, post_id: &String) -> String {
+        format!("highload/post:{}", post_id)
+    }
+    fn get_mark_key(&self, user_id: &Uuid) -> String {
+        format!("highload/post/feed/exists/{}", user_id)
+    }
 }
 
 #[async_trait]
 impl FeedCache for PostCacheImpl {
-   
-    async fn update_followers_feeds(&self, followers_ids: Vec<Uuid>, post: &Post) -> Result<(), Error> {      
+
+    async fn process_save(&self, followers_ids: &Vec<Uuid>, post: &Post) -> Result<(), Error> {      
         let pipeline = self.pool.next().pipeline();        
-        for follower_id in &followers_ids {            
-            let _ = pipeline.zadd::<(), _, _>(self.get_feed_key(follower_id), None, None, false, false, (post.timestamp.timestamp() as f64, post.id.to_string())).await;
+        for follower_id in followers_ids {            
+            let _ = pipeline.zadd::<(), _, _>(
+                self.get_feed_key(follower_id), None, None, false, false, (post.timestamp.timestamp() as f64, post.id.to_string())
+            ).await;
             let _: () = pipeline.set(self.get_mark_key(follower_id), "1", Some(Expiration::EX(3600)), None, false).await?;
+        }
+        pipeline.last().await
+    }
+
+    async fn process_delete(&self, followers_ids: &Vec<Uuid>, post_id: &Uuid) -> Result<(), Error> {
+        let pipeline = self.pool.next().pipeline();
+        for follower_id in followers_ids {            
+            let _ = pipeline
+                .zrem::<(), _, _>(self.get_feed_key(follower_id), post_id.to_string())
+                .await?;        
         }
         pipeline.last().await
     }
@@ -81,7 +100,6 @@ impl FeedCache for PostCacheImpl {
             .iter()
             .map(|p| (p.timestamp.timestamp() as f64, p.id.to_string()))
             .collect();
-
         if entries.is_empty() {
             return Ok(());
         }        
@@ -94,12 +112,6 @@ impl FeedCache for PostCacheImpl {
             entries
         ).await
     }  
-}
-
-impl PostCacheImpl {
-    fn get_post_key(&self, post_id: &String) -> String {
-        format!("highload/post:{}", post_id)
-    }
 }
 
 #[async_trait]
@@ -163,12 +175,6 @@ impl UserPostCache for PostCacheImpl {
             .filter_map(|s| serde_json::from_str(&s).ok())
             .collect())
     }   
-}
-
-impl PostCacheImpl {
-    fn get_mark_key(&self, user_id: &Uuid) -> String {
-        format!("highload/post/feed/exists/{}", user_id)
-    }
 }
 
 #[async_trait]

@@ -4,10 +4,10 @@
     <title>WebSocket Feed</title>
 </head>
 <body>
-    <h1>Real-time posts 29820eec-5495-49d7-9a2f-0a9d97438976</h1>
+    <h1>Real-time posts aad8a25f-0cdd-48bd-a0dd-46c198dcf7cf</h1>
     <div id="log"></div>
     <script>
-        const ws = new WebSocket('ws://localhost:3000/post/feed/posted?user_id=29820eec-5495-49d7-9a2f-0a9d97438976');
+        const ws = new WebSocket('ws://localhost:3000/post/feed/posted?user_id=aad8a25f-0cdd-48bd-a0dd-46c198dcf7cf');
         ws.onmessage = (event) => {
             const div = document.getElementById('log');
             div.innerHTML = '<p>' + event.data + '</p>' + div.innerHTML;

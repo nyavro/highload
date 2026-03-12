@@ -19,6 +19,7 @@ axum-extra = { version = "0.10", features = ["cookie", "query", "typed-header"] 
 axum-jwt-auth = "0.6.2"
 chrono = "0.4.42"
 csv = "1.4.0"
+dashmap = "6.1.0"
 deadpool-postgres = "0.14.1"
 dotenv = "0.14.1"
 env_logger = "0.11.8"

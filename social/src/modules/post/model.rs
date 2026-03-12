@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use serde::{Serialize, Deserialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug,Clone)]
 pub struct Post {
     pub id: Uuid,            
     pub text: String,

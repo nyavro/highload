@@ -24,12 +24,8 @@ impl Post for Application {
         match body {
             Some(post) => {                                                
                 match self.state.post_service.create(claims.user_id, &post.text).await {
-                    Ok(post_id) => {
-                        let _ = self.state.tx.send(models::Post {id: post_id.to_string(),
-                            text: post.text.clone(),
-                            author_user_id: claims.user_id.to_string()
-                        });
-                        Ok(PostPostResponse::Status200(post_id.to_string()))
+                    Ok(post) => {                        
+                        Ok(PostPostResponse::Status200(post.id.to_string()))
                     },
                     Err(e) => {
                         log::error!("Create post error: {:?}", e);
@@ -90,7 +86,7 @@ impl Post for Application {
                     Err(_) => return Ok(PostPutResponse::Status400)
                 };                                
                 match self.state.post_service.update(claims.user_id, post_id, &post.text).await {
-                    Ok(()) => Ok(PostPutResponse::Status200),
+                    Ok(_) => Ok(PostPutResponse::Status200),
                     Err(e) => {
                         log::error!("Update post error: {:?}", e);
                         Ok(PostPutResponse::Status500 {

@@ -11,9 +11,6 @@ pub enum FriendServiceError {
     #[error("Pool error: {0}")]
     Pool(#[from] deadpool_postgres::PoolError),
 
-    #[error("Internal error: {0}")]
-    Internal(String),
-
     #[error("Illegal state: {0}")]
     IllegalState(String),
 }

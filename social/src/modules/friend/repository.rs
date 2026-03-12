@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use deadpool_postgres::{Object};
+use deadpool_postgres::{Pool};
 use thiserror::Error;
 use std::sync::Arc;
 use async_trait::async_trait; 
@@ -12,9 +12,6 @@ pub enum FriendRepositoryError {
     
     #[error("Pool error: {0}")]
     Pool(#[from] deadpool_postgres::PoolError),
-
-    #[error("Internal error: {0}")]
-    Internal(String),
 }
 
 #[automock]
@@ -24,12 +21,12 @@ pub trait FriendRepository {
 }
 
 pub struct FriendRepositoryImpl {
-    client: Arc<Object>
+    pool: Arc<Pool>
 }
 
 impl FriendRepositoryImpl {
-    pub fn new(client: Arc<Object>) -> Self {
-        FriendRepositoryImpl { client }
+    pub fn new(pool: Arc<Pool>) -> Self {
+        FriendRepositoryImpl { pool }
     }
 }
 
@@ -37,7 +34,8 @@ impl FriendRepositoryImpl {
 impl FriendRepository for FriendRepositoryImpl {    
 
     async fn get_followers_ids(&self, user_id: Uuid) -> Result<Vec<Uuid>, FriendRepositoryError> {
-        let res = self.client.query(
+        let client = self.pool.get().await?;
+        let res = client.query(
             "SELECT friend_id FROM friends WHERE user_id = $1", 
             &[&user_id]
         ).await?;

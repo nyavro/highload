@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use deadpool_postgres::{Object};
+use deadpool_postgres::Pool;
 use thiserror::Error;
 use crate::modules::post::model::Post;
 use std::sync::Arc;
@@ -29,12 +29,12 @@ pub trait PostRepository {
 }
 
 pub struct PostRepositoryImpl {
-    client: Arc<Object>
+    pool: Arc<Pool>
 }
 
 impl PostRepositoryImpl {
-    pub fn new(client: Arc<Object>) -> Self {
-        PostRepositoryImpl { client }
+    pub fn new(pool: Arc<Pool>) -> Self {
+        PostRepositoryImpl { pool }
     }
 }
 
@@ -42,7 +42,7 @@ impl PostRepositoryImpl {
 impl PostRepository for PostRepositoryImpl {    
 
     async fn create(&self, user_id: Uuid, text: &String) -> Result<Post, PostRepositoryError> {
-        let res = self.client.query_one(
+        let res = self.pool.get().await?.query_one(
             "INSERT INTO posts (user_id, text) VALUES ($1, $2) RETURNING id, created_at", 
             &[&user_id, text]
         ).await?;
@@ -52,7 +52,7 @@ impl PostRepository for PostRepositoryImpl {
     }
 
     async fn update(&self, user_id: Uuid, id: Uuid, text: &String) -> Result<Post, PostRepositoryError> {
-        let res = self.client.query_one(
+        let res = self.pool.get().await?.query_one(
             "UPDATE posts SET text=$1,updated_at=NOW() WHERE user_id=$2 AND id=$3 RETURNING updated_at", 
             &[&text, &user_id, &id]
         ).await?;    
@@ -61,7 +61,7 @@ impl PostRepository for PostRepositoryImpl {
     }
 
     async fn delete(&self, user_id: Uuid, post_id: Uuid) -> Result<(), PostRepositoryError> {
-        let rows_affected = self.client.execute(
+        let rows_affected = self.pool.get().await?.execute(
             "DELETE FROM posts WHERE user_id=$1 AND id=$2", 
             &[&user_id, &post_id]
         ).await?;    
@@ -73,7 +73,7 @@ impl PostRepository for PostRepositoryImpl {
     }
 
     async fn get(&self, post_id: Uuid) -> Result<Post, PostRepositoryError> {
-        let res = self.client.query_one(
+        let res = self.pool.get().await?.query_one(
             "SELECT text,user_id, updated_at FROM posts WHERE id=$1", 
             &[&post_id]
         ).await?;    
@@ -84,7 +84,7 @@ impl PostRepository for PostRepositoryImpl {
     }
 
     async fn feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<Post>, PostRepositoryError> {
-        let res = self.client.query(
+        let res = self.pool.get().await?.query(
             "SELECT p.text,p.user_id,p.id, p.updated_at 
                 FROM (SELECT friend_id AS f_id FROM friends WHERE user_id=$1) q 
                 JOIN posts p ON q.f_id = p.user_id ORDER BY p.created_at DESC LIMIT $2 OFFSET $3", 
