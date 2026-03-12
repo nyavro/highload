@@ -7,7 +7,7 @@
     <h1>Real-time posts 29820eec-5495-49d7-9a2f-0a9d97438976</h1>
     <div id="log"></div>
     <script>
-        const ws = new WebSocket('ws://localhost:3000/post/feed/posted?user_id=29820eec-5495-49d7-9a2f-0a9d97438976');
+        const ws = new WebSocket('ws://localhost:3000/post/feed/posted?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiZjQ5YTY3YTUtM2Y4Ny00ODk1LThkYzMtM2ZmMzAwOWQ5YTliIiwiZXhwIjoxNzczMzI1MDE5fQ.Tjl9N5U-xMONsTTSWd7EjueM8RJbzM3jkvFk2NJcRnU');
         ws.onmessage = (event) => {
             const div = document.getElementById('log');
             div.innerHTML = '<p>' + event.data + '</p>' + div.innerHTML;
