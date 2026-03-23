@@ -1,8 +1,6 @@
 use async_trait::async_trait;
 use uuid::Uuid;
-use crate::modules::common::ext::extensions::ResultExt;
-
-use crate::modules::post::{followers_service::PostListener, post_cache::FeedCache, model::Post};
+use crate::modules::{common::ext::extensions::ResultExt, post::{followers::follower_event_bus::FollowerEventListener, model::Post, post_cache::FeedCache}};
 
 
 pub struct CachingPostListener<C> 
@@ -22,7 +20,7 @@ where
 }
 
 #[async_trait]
-impl <C> PostListener for CachingPostListener<C> 
+impl <C> FollowerEventListener for CachingPostListener<C> 
 where 
     C: FeedCache + Send + Sync, {
     

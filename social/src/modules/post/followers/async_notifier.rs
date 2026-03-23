@@ -1,8 +1,9 @@
-use crate::modules::{common::ws::ws_manager::WebSocketManager, post::{followers_service::PostListener, model::Post}};
 use uuid::Uuid;
 use async_trait::async_trait; 
 use std::sync::Arc;
 use serde::Serialize;
+
+use crate::modules::{common::ws::ws_manager::WebSocketManager, post::{followers::follower_event_bus::FollowerEventListener, model::Post}};
 
 pub struct AsyncNotifier {    
     ws_manager: Arc<WebSocketManager>
@@ -31,7 +32,7 @@ impl AsyncNotifier {
 }
 
 #[async_trait]
-impl PostListener for AsyncNotifier {    
+impl FollowerEventListener for AsyncNotifier {    
     async fn create(&self, _: &Uuid, followers: &Vec<Uuid>, post: &Post) {
         let _ = self.ws_manager.send_to_users(
             followers, 

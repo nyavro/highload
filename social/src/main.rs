@@ -1,4 +1,4 @@
-use log::info;
+use log::{error, info};
 use tokio_postgres::{Error};
 use dotenv::dotenv;
 use std::sync::Arc;
@@ -8,7 +8,8 @@ use axum::{
     routing::get,
     Router,
 };
-use modules::post::async_handler::post_feed_ws_handler;
+
+use crate::modules::post::followers::async_handler::post_feed_ws_handler;
 
 mod app_state;
 mod migrations;
@@ -38,7 +39,13 @@ async fn main() -> Result<(), Error> {
     let async_routes = async_routes(Arc::clone(&app_state));
     let app = sync_routes.merge(async_routes);
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", app_state.port)).await.unwrap();
-    info!("Server is running on port {}", app_state.port);
+    info!("Server is running on port {}", app_state.port);    
+    let followers_service = Arc::clone(&app_state.followers_service);    
+    tokio::spawn(async move {
+        if let Err(e) = followers_service.run_consumer().await {
+            error!("RabbitMQ Consumer error: {:?}", e);
+        }
+    });
     axum::serve(listener, app).await.unwrap();
     Ok(())
 } 

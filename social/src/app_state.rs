@@ -3,7 +3,7 @@ use tokio_postgres::{NoTls};
 use std::{env, time::Duration};
 use log::info;
 use fred::{prelude::{Error, ReconnectPolicy}, prelude::*};
-use crate::modules::{common::ws::ws_manager::WebSocketManager, post::{self, service_provider::PostService}};
+use crate::modules::{common::ws::ws_manager::WebSocketManager, post::{self, followers::followers_service::FollowersService, service_provider::PostService}};
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -13,6 +13,7 @@ use std::sync::Arc;
     pub secret: String,
     pub jwt_token_ttl_minutes: i64,
     pub post_service: Arc<dyn PostService + Send + Sync>,    
+    pub followers_service: Arc<dyn FollowersService + Send + Sync>,    
     pub port: i32,    
     pub ws_manager: Arc<WebSocketManager>,
 }
@@ -34,7 +35,7 @@ async fn init_redis_pool() -> Result<fred::prelude::Pool, Error> {
         .ok()
         .and_then(|v| v.parse::<usize>().ok())
         .unwrap_or(8);
-    let config = fred::prelude::Config::from_url("redis://:secure_password@127.0.0.1:6379/").expect("Failed to create redis config from url");
+    let config = fred::prelude::Config::from_url(&env::var("REDIS_URL").unwrap()).expect("Failed to create redis config from url");
     let pool = fred::prelude::Builder::from_config(config)
         .with_connection_config(|config| {
             config.connection_timeout = Duration::from_secs(10);
@@ -45,6 +46,12 @@ async fn init_redis_pool() -> Result<fred::prelude::Pool, Error> {
     pool.init().await.expect("Failed to connect to redis");
     info!("Connected to Redis");
     Ok(pool)
+}
+
+async fn init_rabbitmq_pool() -> Result<deadpool_lapin::Pool, deadpool_lapin::CreatePoolError> {
+    let mut cfg = deadpool_lapin::Config::default();
+    cfg.url = env::var("RABBITMQ_URL").ok();
+    cfg.create_pool(Some(Runtime::Tokio1))
 }
 
 impl AppState {    
@@ -67,12 +74,22 @@ impl AppState {
         replica_pool2.resize(10);        
         let master_pool = Arc::new(master_pool);
         let redis = Arc::new(init_redis_pool().await?);
+        let rabbitmq = Arc::new(init_rabbitmq_pool().await?);
         let ws_manager = Arc::new(WebSocketManager::new());
+        let exchange = "post.feed.events".to_string();
         let post_service = post::service_provider::create_service(
             Arc::clone(&master_pool),
             Arc::clone(&redis),
-            Arc::clone(&ws_manager)
-        );                        
+            Arc::clone(&rabbitmq),
+            exchange.clone()
+        );    
+        let followers_service = post::followers::service_provider::create_service(
+            Arc::clone(&master_pool),
+            Arc::clone(&redis),
+            Arc::clone(&rabbitmq),
+            Arc::clone(&ws_manager),
+            exchange.clone()
+        );
         let port = env::var("APPLICATION_PORT").ok().map(|port| port.parse().unwrap()).unwrap();        
         Ok(
             AppState {
@@ -82,7 +99,8 @@ impl AppState {
                 secret: env::var("JWT_SECRET").unwrap(),
                 jwt_token_ttl_minutes: env::var("jwt_token_ttl_minutes").unwrap().parse().unwrap(),                                
                 post_service: post_service,                 
-                ws_manager
+                ws_manager,
+                followers_service: followers_service
             }
         )
     }
