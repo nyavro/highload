@@ -34,6 +34,21 @@ services:
       <<: *AUTH
       POSTGRES_DB: "messenger"
 
+  tarantool:
+    image: tarantool/tarantool:latest
+    container_name: tarantool_db
+    ports:
+      - "3301:3301"
+    environment:
+      - TARANTOOL_USER_NAME=admin
+      - TARANTOOL_USER_PASSWORD=mysecretpassword
+    command: tarantool /opt/tarantool/init.lua
+    volumes:      
+      - ./init/init-in-memory-db.lua:/opt/tarantool/init.lua
+      - tarantool_data:/var/lib/tarantool
+      
+
 volumes:
   healthcheck-volume:
-  citus_master_data:    
+  citus_master_data:  
+  tarantool_data:  
