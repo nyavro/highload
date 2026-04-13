@@ -2,8 +2,8 @@ use uuid::Uuid;
 use deadpool_postgres::Pool;
 use std::sync::Arc;
 use async_trait::async_trait; 
-use crate::modules::dialog::{init::{DialogRepositoryError, DialogRepository}, domain_models};
 use log::{info, error};
+use crate::modules::dialog::{domain_models, service_provider::{DialogRepository, DialogRepositoryError}};
 
 pub struct DialogRepositoryImpl {
     pool: Arc<Pool>
@@ -46,11 +46,11 @@ impl DialogRepository for DialogRepositoryImpl {
         Ok(message_id)
     }
 
-    async fn list(&self, from: Uuid, to: Uuid) -> Result<Vec<domain_models::DialogMessage>, DialogRepositoryError> {        
+    async fn list(&self, from: Uuid, to: Uuid, offset: u32, limit: u32) -> Result<Vec<domain_models::DialogMessage>, DialogRepositoryError> {        
         let client = self.pool.get().await?;
         let res = client.query(
-            "SELECT from_id, to_id, text FROM dialogs WHERE owner_id=$1 AND to_id=$2 ORDER BY created_at DESC", 
-            &[&from, &to]
+            "SELECT from_id, to_id, text FROM dialogs WHERE owner_id=$1 AND to_id=$2 ORDER BY created_at DESC OFFSET $3 LIMIT $4", 
+            &[&from, &to, &offset, &limit]
         ).await?;        
         Ok(
             res.iter().map(|row| {

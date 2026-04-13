@@ -24,3 +24,6 @@ serde = "1.0.228"
 jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
 chrono = "0.4.43"
 csv = "1.4.0"
+tarantool = "11.0.0"
+deadpool = "0.13.0"
+tarantool-rs = "0.0.10"

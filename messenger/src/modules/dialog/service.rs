@@ -1,7 +1,14 @@
 use async_trait::async_trait; 
-use crate::modules::dialog::{init::{DialogService, DialogRepository, DialogServiceError}, domain_models};
 use uuid::Uuid;
 use log::info;
+use crate::modules::dialog::{domain_models, service_provider::{DialogRepository, DialogRepositoryError, DialogService}};
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum DialogServiceError {
+    #[error("Database error: {0}")]
+    Database(#[from] DialogRepositoryError)
+}
 
 pub struct DialogServiceImpl<R> 
 where
@@ -26,6 +33,6 @@ where R: DialogRepository + Send + Sync {
     }
 
     async fn list_messages(&self, from: Uuid, to: Uuid) -> Result<Vec<domain_models::DialogMessage>, DialogServiceError> {
-        Ok(self.repository.list(from, to).await?)
+        Ok(self.repository.list(from, to, 0, 100).await?)
     }
 }

@@ -10,15 +10,13 @@ mod migrations;
 mod application;
 mod modules;
 
-use crate::modules::mock;
-
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     dotenv::from_filename(".env.secret").ok();    
     dotenv().ok();    
     env_logger::init();        
     let app_state = Arc::new(AppState::init().await.unwrap());
-    migrations::run_migrations(app_state.clone()).await;
+    // migrations::run_migrations(app_state.clone()).await;
     // mock::service::generate_messages(Arc::clone(&app_state)).await;
     let app = openapi::server::new(Application::new(Arc::clone(&app_state)));        
     let port = app_state.port;
