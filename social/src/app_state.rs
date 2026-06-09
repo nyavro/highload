@@ -3,7 +3,7 @@ use tokio_postgres::{NoTls};
 use std::{env, time::Duration};
 use log::info;
 use fred::{prelude::{Error, ReconnectPolicy}, prelude::*};
-use crate::modules::{common::ws::ws_manager::WebSocketManager, post::{self, followers::followers_service::FollowersService, service_provider::PostService}};
+use crate::modules::{common::ws::ws_manager::WebSocketManager, dialog::{self, service_provider::DialogService}, post::{self, followers::followers_service::FollowersService, service_provider::PostService}};
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -12,7 +12,8 @@ use std::sync::Arc;
     replica_pools: Vec<Pool>,
     pub secret: String,
     pub jwt_token_ttl_minutes: i64,
-    pub post_service: Arc<dyn PostService + Send + Sync>,    
+    pub post_service: Arc<dyn PostService + Send + Sync>,
+    pub dialog_service: Arc<dyn DialogService + Send + Sync>,    
     pub followers_service: Arc<dyn FollowersService + Send + Sync>,    
     pub port: i32,    
     pub ws_manager: Arc<WebSocketManager>,
@@ -90,7 +91,8 @@ impl AppState {
             Arc::clone(&ws_manager),
             exchange.clone()
         );
-        let port = env::var("APPLICATION_PORT").ok().map(|port| port.parse().unwrap()).unwrap();        
+        let port = env::var("APPLICATION_PORT").ok().map(|port| port.parse().unwrap()).unwrap();   
+        let dialog_service = dialog::service_provider::create_service();     
         Ok(
             AppState {
                 port,
@@ -98,7 +100,8 @@ impl AppState {
                 replica_pools: vec!(replica_pool1, replica_pool2),
                 secret: env::var("JWT_SECRET").unwrap(),
                 jwt_token_ttl_minutes: env::var("jwt_token_ttl_minutes").unwrap().parse().unwrap(),                                
-                post_service: post_service,                 
+                post_service,        
+                dialog_service,         
                 ws_manager,
                 followers_service: followers_service
             }
