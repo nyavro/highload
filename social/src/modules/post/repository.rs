@@ -25,7 +25,7 @@ pub trait PostRepository {
     async fn update(&self, user_id: Uuid, post_id: Uuid, text: &String) -> Result<Post, PostRepositoryError>;
     async fn delete(&self, user_id: Uuid, post_id: Uuid) -> Result<(), PostRepositoryError>;
     async fn get(&self, post_id: Uuid) -> Result<Post, PostRepositoryError>;
-    async fn feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<Post>, PostRepositoryError>;    
+    async fn feed(&self, user_id: Uuid, limit: Option<u64>, offset: Option<u64>) -> Result<Vec<Post>, PostRepositoryError>;    
 }
 
 pub struct PostRepositoryImpl {
@@ -83,12 +83,12 @@ impl PostRepository for PostRepositoryImpl {
         Ok(Post {id: post_id, text, author_user_id, timestamp})
     }
 
-    async fn feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<Post>, PostRepositoryError> {
+    async fn feed(&self, user_id: Uuid, limit: Option<u64>, offset: Option<u64>) -> Result<Vec<Post>, PostRepositoryError> {
         let res = self.pool.get().await?.query(
             "SELECT p.text,p.user_id,p.id, p.updated_at 
                 FROM (SELECT friend_id AS f_id FROM friends WHERE user_id=$1) q 
                 JOIN posts p ON q.f_id = p.user_id ORDER BY p.created_at DESC LIMIT $2 OFFSET $3", 
-            &[&user_id, &limit, &offset]
+            &[&user_id, &limit.map(|v| v as i64), &offset.map(|v| v as i64)]
         ).await?;        
         Ok(
             res.iter().map(|row| {

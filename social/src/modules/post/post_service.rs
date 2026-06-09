@@ -17,7 +17,7 @@ where
         }
     }
 
-    async fn fetch_from_db(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<Post>, PostServiceError> {
+    async fn fetch_from_db(&self, user_id: Uuid, limit: Option<u64>, offset: Option<u64>) -> Result<Vec<Post>, PostServiceError> {
         let feed = self.repository.feed(user_id, limit, offset).await?;        
         Ok(feed)
     }            
@@ -43,7 +43,7 @@ where
         Ok(self.repository.get(post_id).await?)
     }
 
-    async fn feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<Post>, PostServiceError> {                  
+    async fn feed(&self, user_id: Uuid, limit: Option<u64>, offset: Option<u64>) -> Result<Vec<Post>, PostServiceError> {                  
         Ok(self.fetch_from_db(user_id, limit, offset).await?)      
     }
 }    

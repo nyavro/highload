@@ -23,7 +23,7 @@ pub trait PostService {
     async fn update(&self, user_id: Uuid, post_id: Uuid, text: &String) -> Result<Post, PostServiceError>;
     async fn delete(&self, user_id: Uuid, post_id: Uuid) -> Result<(), PostServiceError>;
     async fn get(&self, post_id: Uuid) -> Result<Post, PostServiceError>;
-    async fn feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<Post>, PostServiceError>;
+    async fn feed(&self, user_id: Uuid, limit: Option<u64>, offset: Option<u64>) -> Result<Vec<Post>, PostServiceError>;
 }
 
 pub fn create_service(pool: Arc<deadpool_postgres::Pool>, redis: Arc<prelude::Pool>, rabbitmq: Arc<deadpool_lapin::Pool>, exchange: String) -> Arc<dyn PostService + Send + Sync> {    

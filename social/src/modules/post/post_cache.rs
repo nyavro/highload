@@ -8,7 +8,7 @@ use std::sync::Arc;
 use async_trait::async_trait; 
 use mockall::automock;
 
-const DEFAULT_FEED_SIZE: i64 = 1000;
+const DEFAULT_FEED_SIZE: u64 = 1000;
 const POST_CACHE_TTL_SECONDS: i64 = 86400;
 
 #[automock]
@@ -16,7 +16,7 @@ const POST_CACHE_TTL_SECONDS: i64 = 86400;
 pub trait FeedCache {
     async fn process_save(&self, followers_ids: &Vec<Uuid>, post: &Post) -> Result<(), Error>;
     async fn process_delete(&self, followers_ids: &Vec<Uuid>, post_id: &Uuid) -> Result<(), Error>;    
-    async fn get_user_feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<String>, Error>;
+    async fn get_user_feed(&self, user_id: Uuid, limit: Option<u64>, offset: Option<u64>) -> Result<Vec<String>, Error>;
     async fn save_user_feed(&self, user_id: Uuid, posts: &Vec<Post>) -> Result<(), Error>;
 }
 
@@ -89,7 +89,7 @@ impl FeedCache for PostCacheImpl {
         pipeline.last().await
     }
 
-    async fn get_user_feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<String>, Error> {        
+    async fn get_user_feed(&self, user_id: Uuid, limit: Option<u64>, offset: Option<u64>) -> Result<Vec<String>, Error> {        
         let start = offset.unwrap_or(0) as i64;
         let stop = start + (limit.unwrap_or(DEFAULT_FEED_SIZE) as i64) - 1;
         self.pool.next().zrevrange::<Vec<String>, _>(self.get_feed_key(&user_id), start, stop, false).await

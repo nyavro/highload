@@ -56,7 +56,7 @@ where
         Ok(post)        
     }   
 
-    async fn feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<Post>, PostServiceError> {        
+    async fn feed(&self, user_id: Uuid, limit: Option<u64>, offset: Option<u64>) -> Result<Vec<Post>, PostServiceError> {        
         if let Ok(exists) = self.post_cache.check_feed_exists(user_id).await && exists {
             info!("Cache hit: {}", user_id);
             if let Ok(ids) = self.post_cache.get_user_feed(user_id, limit, offset).await {

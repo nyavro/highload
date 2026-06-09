@@ -67,7 +67,7 @@ where
         Ok(self.service.get(post_id).await?)
     }
 
-    async fn feed(&self, user_id: Uuid, limit: Option<i64>, offset: Option<i64>) -> Result<Vec<Post>, PostServiceError> {
+    async fn feed(&self, user_id: Uuid, limit: Option<u64>, offset: Option<u64>) -> Result<Vec<Post>, PostServiceError> {
         Ok(self.service.feed(user_id, limit, offset).await?)
     }
 }
