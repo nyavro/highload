@@ -5,6 +5,7 @@ use log::info;
 use fred::{prelude::{Error, ReconnectPolicy}, prelude::*};
 use crate::modules::{common::ws::ws_manager::WebSocketManager, dialog::{self, service_provider::DialogService}, post::{self, followers::followers_service::FollowersService, service_provider::PostService}};
 use std::sync::Arc;
+use messenger_client::apis::configuration::Configuration;
 
 #[derive(Clone)]
   pub struct AppState {
@@ -91,8 +92,12 @@ impl AppState {
             Arc::clone(&ws_manager),
             exchange.clone()
         );
-        let port = env::var("APPLICATION_PORT").ok().map(|port| port.parse().unwrap()).unwrap();   
-        let dialog_service = dialog::service_provider::create_service();     
+        let port = env::var("APPLICATION_PORT").ok().map(|port| port.parse().unwrap()).unwrap();
+        let mut config = Configuration::new();   
+        if let Some(messenger_url) = env::var("MESSENGER_URL").ok() {
+            config.base_path = messenger_url;
+        }
+        let dialog_service = dialog::service_provider::create_service(Arc::new(config));     
         Ok(
             AppState {
                 port,

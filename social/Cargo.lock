@@ -2065,6 +2065,7 @@ dependencies = [
  "jwt",
  "lapin 4.3.0",
  "log",
+ "messenger_client",
  "mockall",
  "mpsc",
  "openapi",
