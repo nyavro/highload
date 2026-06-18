@@ -15,7 +15,7 @@ pub enum DialogServiceError {
 #[async_trait]
 pub trait DialogService {  
     async fn list_messages(&self, user_id: &String) -> Result<Vec<models::Message>,DialogServiceError>;  
-    async fn send(&self, to_user_id: &String, text: String) -> Result<(), DialogServiceError>;
+    async fn send(&self, to_user_id: &String, text: String, token: Option<String>) -> Result<(), DialogServiceError>;
 }
 
 pub fn create_service(config: Arc<Configuration>) -> Arc<dyn DialogService + Send + Sync> {        

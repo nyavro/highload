@@ -1,0 +1,9 @@
+POST http://localhost:3000/dialog/9bd77c63-89d6-4edf-b656-e86ced4aa604/send
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiM2Q0NDk4MGYtY2QzZi00MmI3LWI4ZGEtY2ZkZGJhZTc3YjkyIiwiZXhwIjoxNzgxNzk1NTg0LCJ0b2tlbiI6bnVsbH0.caHTFJoKH-lBqXLeNONurn8Sd1dBLZHTMNDI1t6EzoM
+content-type: application/json
+accept: application/json
+
+{    
+    "text": "Hope just fine!"
+}
+

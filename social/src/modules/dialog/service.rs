@@ -2,7 +2,7 @@ use std::sync::Arc;
 use crate::modules::dialog::{models, service_provider::{DialogService, DialogServiceError}};
 use messenger_client::{apis::{configuration::Configuration, dialog_api::{dialog_user_id_list_get, dialog_user_id_send_post}}, models::{DialogMessage, DialogUserIdSendPostRequest}};
 use async_trait::async_trait;
-
+use log::info;
 pub struct DialogServiceImpl {
     config: Arc<Configuration>    
 }
@@ -21,14 +21,16 @@ impl DialogService for DialogServiceImpl {
             Err(e) => Err(DialogServiceError::Integration(e.to_string()))
         }
     }
-    async fn send(&self, to_user_id: &String, text: String) -> Result<(), DialogServiceError> {    
-        match dialog_user_id_send_post(&self.config, &to_user_id, Some(DialogUserIdSendPostRequest {text})).await {
+    async fn send(&self, to_user_id: &String, text: String, token: Option<String>) -> Result<(), DialogServiceError> {                    
+        let mut cfg = (*self.config).clone();        
+        cfg.bearer_access_token = token; 
+        match dialog_user_id_send_post(&cfg, &to_user_id, Some(DialogUserIdSendPostRequest {text})).await {
             Ok(response) => {
-                println!("Send result: {:?}", response);
+                info!("Send result: {:?}", response);
                 Ok(())
             },
             Err(e) => {
-                println!("Integration failure: {:?}", e);
+                info!("Integration failure: {:?}", e);
                 Err(DialogServiceError::Integration(e.to_string()))
             }
         }

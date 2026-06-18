@@ -34,9 +34,9 @@ impl Dialog for Application {
         claims: &Self::Claims,
         path_params: &models::DialogUserIdSendPostPathParams,
         body: &Option<models::DialogUserIdSendPostRequest>,
-    ) -> Result<DialogUserIdSendPostResponse, ()> {
-        if let Some(send) = body {
-            match self.state.dialog_service.send(&path_params.user_id, send.text.clone()).await {
+    ) -> Result<DialogUserIdSendPostResponse, ()> {        
+        if let Some(send) = body {            
+            match self.state.dialog_service.send(&path_params.user_id, send.text.clone(), claims.token.clone()).await {
                 Ok(_) => Ok(DialogUserIdSendPostResponse::Status200),
                 Err(_) => Err(())
             }

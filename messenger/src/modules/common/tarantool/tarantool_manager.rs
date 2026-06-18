@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use deadpool::managed::{Manager, Metrics, RecycleError, RecycleResult};
 use tarantool_rs::{Connection, ExecutorExt};
 
