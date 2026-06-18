@@ -1,4 +1,3 @@
-use log::info;
 use uuid::Uuid;
 use crate::modules::post::event::DomainEvent;
 use crate::modules::post::model::Post;
@@ -31,7 +30,7 @@ where
     S: PostService + Send + Sync {
     async fn create(&self, user_id: Uuid, text: &String) -> Result<Post, PostServiceError> {        
         let post = self.service.create(user_id, text).await?; 
-        info!("Create post at PublishingService");
+        tracing::info!("Create post at PublishingService");
         let _ = self.rabbit_publisher.publish(
             &DomainEvent::PostCreated {
                 user_id,

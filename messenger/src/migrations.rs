@@ -1,6 +1,5 @@
 use std::sync::Arc;
 use crate::app_state::AppState;
-use log::info;
 
 mod embedded {
     refinery::embed_migrations!("./init/migrations");
@@ -8,10 +7,10 @@ mod embedded {
 
 pub async fn run_migrations(app_state: Arc<AppState>) {
     let mut client = app_state.get_master_client().await;
-    info!("Running DB migrations...");
+    tracing::info!("Running DB migrations...");
     let report = embedded::migrations::runner().run_async(&mut **client).await.unwrap();
     for migration in report.applied_migrations() {
-        info!("Migration Applied - Name: {}, Version: {}", migration.name(), migration.version());
+        tracing::info!("Migration Applied - Name: {}, Version: {}", migration.name(), migration.version());
     }
-    info!("Applied {} migrations", report.applied_migrations().len());  
+    tracing::info!("Applied {} migrations", report.applied_migrations().len());  
 }

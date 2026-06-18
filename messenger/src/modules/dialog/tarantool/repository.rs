@@ -2,7 +2,6 @@ use uuid::Uuid;
 use std::sync::Arc;
 use async_trait::async_trait; 
 use crate::modules::{common::tarantool::{tarantool_manager::TarantoolManager}, dialog::{domain_models, service_provider::{DialogRepository, DialogRepositoryError}}};
-use log::{info};
 use deadpool::managed::{Pool};
 use tarantool_rs::ExecutorExt;
 
@@ -20,9 +19,9 @@ impl DialogRepositoryImpl {
 impl DialogRepository for DialogRepositoryImpl {    
 
     async fn send(&self, from: Uuid, to: Uuid, text: &String) -> Result<Uuid, DialogRepositoryError> {
-        info!("Saving message to DB");
+        tracing::info!("Saving message to DB");
         let client = self.pool.get().await.map_err(|e| DialogRepositoryError::Internal(e.to_string()))?;
-        info!("Got the client");
+        tracing::info!("Got the client");
         let message_id = Uuid::now_v7();
         let result = client
             .call("send_message", (&from.to_string(), &from.to_string(), &to.to_string(), &message_id.to_string(), text))
@@ -30,7 +29,7 @@ impl DialogRepository for DialogRepositoryImpl {
         let message_id_str = result
             .decode_first::<String>()
             .map_err(|e| DialogRepositoryError::Internal(e.to_string()))?;        
-        info!("Got message id {:?}", message_id_str);
+        tracing::info!("Got message id {:?}", message_id_str);
         // let message_id = string_to_uuid(&message_id_str).map_err(|e| DialogRepositoryError::Internal(e.to_string()))?;
         // info!("Message saved successfully with ID: {}", message_id);
         Ok(message_id)

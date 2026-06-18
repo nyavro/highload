@@ -1,6 +1,5 @@
 use uuid::Uuid;
 use crate::modules::post::{model::Post, post_cache::PostCache, service_provider::{PostService, PostServiceError}};
-use log::{info};
 use crate::modules::common::ext::extensions::ResultExt;
 use async_trait::async_trait; 
 
@@ -58,9 +57,9 @@ where
 
     async fn feed(&self, user_id: Uuid, limit: Option<u64>, offset: Option<u64>) -> Result<Vec<Post>, PostServiceError> {        
         if let Ok(exists) = self.post_cache.check_feed_exists(user_id).await && exists {
-            info!("Cache hit: {}", user_id);
+            tracing::info!("Cache hit: {}", user_id);
             if let Ok(ids) = self.post_cache.get_user_feed(user_id, limit, offset).await {
-                info!("Ids from cache: {:?}", ids);
+                tracing::info!("Ids from cache: {:?}", ids);
                 let ids_len = ids.len();
                 if let Ok(posts) = self.post_cache.get_posts_by_ids(ids).await && posts.len() == ids_len {
                     return Ok(posts);

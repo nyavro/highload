@@ -1,7 +1,6 @@
 use uuid::Uuid;
 use deadpool_postgres::{Object};
 use thiserror::Error;
-use log::info;
 
 #[derive(Error, Debug)]
 pub enum FriendServiceError {
@@ -43,15 +42,15 @@ pub async fn add_friend(mut client: Object, initiator_user_id: Uuid, user_id: Uu
     tx.commit().await?;
     if rows_affected > 0 {
         if count > 0 {
-            info!("Friendship request accepted");
+            tracing::info!("Friendship request accepted");
             return Ok(FriendshipCreateResult::Mutual);
         } else {
-            info!("Subscribed to {}", user_id);
+            tracing::info!("Subscribed to {}", user_id);
             return Ok(FriendshipCreateResult::Subscribed);
         }        
     }        
     else {
-        info!("Friendship request already exists");
+        tracing::info!("Friendship request already exists");
         return Ok(FriendshipCreateResult::AlreadyExists);
     }    
 }

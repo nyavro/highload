@@ -15,7 +15,7 @@ impl Dialog for Application {
     async fn dialog_user_id_list_get(
         &self,    
         _: &Method,
-        _: &Host,
+        host: &Host,
         _: &CookieJar,
         claims: &Self::Claims,
         path_params: &models::DialogUserIdListGetPathParams,
@@ -36,7 +36,7 @@ impl Dialog for Application {
         body: &Option<models::DialogUserIdSendPostRequest>,
     ) -> Result<DialogUserIdSendPostResponse, ()> {        
         if let Some(send) = body {            
-            match self.state.dialog_service.send(&path_params.user_id, send.text.clone(), claims.token.clone()).await {
+            match self.state.dialog_service.send(&path_params.user_id, send.text.clone()).await {
                 Ok(_) => Ok(DialogUserIdSendPostResponse::Status200),
                 Err(_) => Err(())
             }

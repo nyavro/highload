@@ -1,3 +1,4 @@
+use http::HeaderName;
 use openapi::apis::{ApiAuthBasic, BasicAuthKind, ErrorHandler};
 use async_trait::async_trait; 
 use std::sync::Arc;
@@ -22,7 +23,14 @@ impl ApiAuthBasic for Application {
         let auth_header = headers.get(axum::http::header::AUTHORIZATION)?;
         let auth_str = auth_header.to_str().ok()?;
         let token = auth_str.strip_prefix("Bearer ")?;
+        let request_id = headers.get(HeaderName::from_static("x-request-id"))
+            .and_then(|v| v.to_str().ok())
+            .map(|v| v.to_string());        
         auth::verify_token(token, &self.state.secret.as_bytes()).ok()
+            .map(|mut claims| {                
+                claims.request_id = request_id;
+                claims
+            })
     }
 }
 

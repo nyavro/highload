@@ -34,7 +34,7 @@ impl Friend for Application {
             Ok(friend_service::FriendshipCreateResult::Subscribed) => Ok(FriendSetUserIdPutResponse::Status200),
             Ok(friend_service::FriendshipCreateResult::AlreadyExists) => Ok(FriendSetUserIdPutResponse::Status400),             
             Err(e) => {
-                log::error!("Friendship create error: {:?}", e);
+                tracing::error!("Friendship create error: {:?}", e);
                 Ok(FriendSetUserIdPutResponse::Status500 {
                     body: models::LoginPost500Response { 
                         message: "Internal Server Error".to_string(),
@@ -69,7 +69,7 @@ impl Friend for Application {
             Ok(friend_service::FriendshipEndResult::Unsubscribed) => Ok(FriendDeleteUserIdPutResponse::Status200),
             Ok(friend_service::FriendshipEndResult::NotInFriendship) => Ok(FriendDeleteUserIdPutResponse::Status400),             
             Err(e) => {
-                log::error!("Friendship end error: {:?}", e);
+                tracing::error!("Friendship end error: {:?}", e);
                 Ok(FriendDeleteUserIdPutResponse::Status500 {
                     body: models::LoginPost500Response { 
                         message: "Internal Server Error".to_string(),

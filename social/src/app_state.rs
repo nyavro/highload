@@ -1,7 +1,6 @@
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod, Runtime, Object};
 use tokio_postgres::{NoTls};
 use std::{env, time::Duration};
-use log::info;
 use fred::{prelude::{Error, ReconnectPolicy}, prelude::*};
 use crate::modules::{common::ws::ws_manager::WebSocketManager, dialog::{self, service_provider::DialogService}, post::{self, followers::followers_service::FollowersService, service_provider::PostService}};
 use std::sync::Arc;
@@ -46,7 +45,7 @@ async fn init_redis_pool() -> Result<fred::prelude::Pool, Error> {
         .build_pool(pool_size)
         .expect("Failed to create redis pool");            
     pool.init().await.expect("Failed to connect to redis");
-    info!("Connected to Redis");
+    tracing::info!("Connected to Redis");
     Ok(pool)
 }
 
@@ -120,7 +119,7 @@ impl AppState {
     pub async fn get_replica_client(&self) -> Object {        
         use rand::Rng;
         let idx = rand::rng().random_range(0..self.replica_pools.len());
-        info!("{:?}", idx);
+        tracing::info!("{:?}", idx);
         self.replica_pools[idx].get().await.unwrap()
         // self.get_master_client().await
     }        

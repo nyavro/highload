@@ -8,7 +8,6 @@ use axum::http::Method;
 use crate::modules::auth::auth;
 use crate::modules::dialog;
 use uuid::Uuid;
-use log::{info, error};
 
 #[async_trait]
 impl Dialog for Application {
@@ -25,14 +24,14 @@ impl Dialog for Application {
         let user_id = match Uuid::parse_str(&path_params.user_id) {
             Ok(id) => id,
             Err(e) => {
-                info!("Could not parse: {:?}", e);
+                tracing::info!("Could not parse: {:?}", e);
                 return Ok(DialogUserIdListGetResponse::Status400);
             }
         };  
         match self.state.dialog_service.list_messages(claims.user_id, user_id).await {
             Ok(res) => Ok(DialogUserIdListGetResponse::Status200(to_dtos(res))),
             Err(e) => {
-                info!("Failure: {:?}", e);
+                tracing::info!("Failure: {:?}", e);
                 Err(())
             }
         }        
@@ -47,7 +46,7 @@ impl Dialog for Application {
         path_params: &models::DialogUserIdSendPostPathParams,
         body: &Option<models::DialogUserIdSendPostRequest>,
     ) -> Result<DialogUserIdSendPostResponse, ()> {
-        info!("Post message handling");
+        tracing::info!("Post message handling");
         let user_id = match Uuid::parse_str(&path_params.user_id) {
             Ok(id) => id,
             Err(_) => return Ok(DialogUserIdSendPostResponse::Status400)
@@ -56,7 +55,7 @@ impl Dialog for Application {
             match self.state.dialog_service.send_message(claims.user_id, user_id, &message.text).await {
                 Ok(_) => Ok(DialogUserIdSendPostResponse::Status200),
                 Err(err) => {
-                    error!("Failed to send message: {:?}", err);
+                    tracing::error!("Failed to send message: {:?}", err);
                     Err(())
                 }
             }

@@ -28,7 +28,7 @@ impl Post for Application {
                         Ok(PostPostResponse::Status200(post.id.to_string()))
                     },
                     Err(e) => {
-                        log::error!("Create post error: {:?}", e);
+                        tracing::error!("Create post error: {:?}", e);
                         Ok(PostPostResponse::Status500 {
                             body: models::LoginPost500Response { 
                                 message: "Internal Server Error".to_string(),
@@ -58,7 +58,7 @@ impl Post for Application {
         match self.state.post_service.get(post_id).await {
             Ok(post) => Ok(PostIdGetResponse::Status200(to_post_dto(post))),
             Err(e) => {
-                log::error!("Get post error: {:?}", e);
+                tracing::error!("Get post error: {:?}", e);
                 Ok(PostIdGetResponse::Status500 {
                     body: models::LoginPost500Response {
                         message: "Internal Server Error".to_string(),
@@ -88,7 +88,7 @@ impl Post for Application {
                 match self.state.post_service.update(claims.user_id, post_id, &post.text).await {
                     Ok(_) => Ok(PostPutResponse::Status200),
                     Err(e) => {
-                        log::error!("Update post error: {:?}", e);
+                        tracing::error!("Update post error: {:?}", e);
                         Ok(PostPutResponse::Status500 {
                             body: models::LoginPost500Response {
                                 message: "Internal Server Error".to_string(),
@@ -119,7 +119,7 @@ impl Post for Application {
         match self.state.post_service.delete(claims.user_id, post_id).await {
             Ok(()) => Ok(PostIdDeleteResponse::Status200),
             Err(e) => {
-                log::error!("Delete post error: {:?}", e);
+                tracing::error!("Delete post error: {:?}", e);
                 Ok(PostIdDeleteResponse::Status500 {
                     body: models::LoginPost500Response {
                         message: "Internal Server Error".to_string(),
@@ -143,7 +143,7 @@ impl Post for Application {
         match self.state.post_service.feed(claims.user_id, query_params.limit, query_params.offset).await {
             Ok(posts) => Ok(PostFeedGetResponse::Status200(to_post_dtos(posts))),
             Err(e) => {
-                log::error!("Feed posts error: {:?}", e);
+                tracing::error!("Feed posts error: {:?}", e);
                 Ok(PostFeedGetResponse::Status500 {
                     body: models::LoginPost500Response {
                         message: "Internal Server Error".to_string(),

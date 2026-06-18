@@ -1,6 +1,5 @@
 use serde::{Serialize, Deserialize};
 use jsonwebtoken::{decode, DecodingKey, Validation};
-use log::info;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -11,7 +10,7 @@ pub struct Claims {
 
 pub fn verify_token(token: &str, secret: &[u8]) -> Result<Claims, jsonwebtoken::errors::Error> {
     let validation = Validation::default();    
-    info!("Verifying token {:?}", token);
+    tracing::info!("Verifying token {:?}", token);
     decode::<Claims>(token, &DecodingKey::from_secret(secret), &validation)
         .map(|token_data| token_data.claims)        
 }

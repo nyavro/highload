@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use async_trait::async_trait;
 use deadpool_lapin::{Pool, lapin::{Consumer, ExchangeKind, options::{BasicAckOptions, BasicConsumeOptions, ExchangeDeclareOptions, QueueBindOptions, QueueDeclareOptions}, types::{AMQPValue, FieldTable, ShortString}}};
-use log::{info, warn};
 use uuid::Uuid;
 use crate::modules::{friend::repository::{FriendRepository, FriendRepositoryError}, post::{event::DomainEvent, followers::follower_event_bus::{EventBus, FollowerEvent, FollowerEventListener}}};
 use tokio_stream::StreamExt;
@@ -68,11 +67,11 @@ where
     F: FriendRepository + Send + Sync {
     async fn run_consumer(&self) -> Result<(), Box<dyn std::error::Error>> {
         let mut consumer = self.init_consumer().await?;
-        info!("Consumer started...");
+        tracing::info!("Consumer started...");
         while let Some(delivery) = consumer.next().await {            
             let delivery = delivery?;
             let event: DomainEvent = serde_json::from_slice(&delivery.data)?;
-            info!("Incoming event: {:?}", event);
+            tracing::info!("Incoming event: {:?}", event);
             let user_id = event.user_id();
             match self.fetch_followers(*user_id).await {
                 Ok(followers) => {
@@ -81,7 +80,7 @@ where
                         followers,
                     }).await;
                 },
-                Err(e) => warn!("Failed to fetch followers {:?}", e)
+                Err(e) => tracing::warn!("Failed to fetch followers {:?}", e)
             };    
             delivery.ack(BasicAckOptions::default()).await?;
         }

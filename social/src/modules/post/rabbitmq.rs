@@ -1,7 +1,5 @@
 use std::sync::Arc;
-
 use deadpool_lapin::{Pool, lapin::{BasicProperties, options::BasicPublishOptions}};
-use log::info;
 
 use crate::modules::post::event::DomainEvent;
 
@@ -16,7 +14,7 @@ impl RabbitPublisher {
     }
 
     pub async fn publish(&self, event: &DomainEvent) -> Result<(), Box<dyn std::error::Error>> {
-        info!("Publishing event...");
+        tracing::info!("Publishing event...");
         let conn = self.pool.get().await?;
         let channel = conn.create_channel().await?;
         let payload = serde_json::to_vec(event)?;        
@@ -25,7 +23,7 @@ impl RabbitPublisher {
             DomainEvent::PostUpdated { .. } => "post.updated",
             DomainEvent::PostDeleted { .. } => "post.deleted",
         };
-        info!("Publishing event: {:?} by key: {:?}", event, routing_key);
+        tracing::info!("Publishing event: {:?} by key: {:?}", event, routing_key);
         channel.basic_publish(
             &self.exchange,
             routing_key,
@@ -33,7 +31,7 @@ impl RabbitPublisher {
             &payload,
             BasicProperties::default(),
         ).await?;
-        info!("Event published: {:?} by key: {:?}", event, routing_key);
+        tracing::info!("Event published: {:?} by key: {:?}", event, routing_key);
         Ok(())
     }
 }

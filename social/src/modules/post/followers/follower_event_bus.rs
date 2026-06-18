@@ -2,7 +2,6 @@ use serde::Serialize;
 use uuid::Uuid;
 use crate::modules::post::event::DomainEvent;
 use crate::modules::post::model::Post;
-use log::{info};
 use async_trait::async_trait;
 use std::sync::Arc; 
 
@@ -44,7 +43,7 @@ impl EventBus {
 
     pub async fn publish(&self, event: FollowerEvent) {
         if let Err(e) = self.sender.send(event).await {
-            info!("Failed to publish event: {:?}", e);
+            tracing::info!("Failed to publish event: {:?}", e);
         }
     }
 }

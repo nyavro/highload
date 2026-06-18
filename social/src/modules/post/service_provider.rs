@@ -3,7 +3,6 @@ use fred::prelude;
 use deadpool_postgres;
 use thiserror::Error;
 use uuid::Uuid;
-use log::{error};
 use async_trait::async_trait;
 
 use crate::modules::post::{cached_post_service::CachedPostService, model::Post, post_cache::PostCacheImpl, post_service::PostServiceImpl, publishing_service::PublishingServiceImpl, rabbitmq::RabbitPublisher, repository::{PostRepositoryError, PostRepositoryImpl}}; 

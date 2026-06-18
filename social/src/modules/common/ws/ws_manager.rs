@@ -7,7 +7,6 @@ use futures_util::SinkExt;
 use serde::Serialize;
 use std::collections::HashMap;
 use serde_json::Error;
-use log::info;
 
 type UserId = Uuid;
 type Tx = UnboundedSender<Message>; 
@@ -22,7 +21,7 @@ impl WebSocketManager {
     }
 
     pub fn register(&self, user_id: UserId, tx: Tx) {
-        info!("Registering user id {:?}", user_id);
+        tracing::info!("Registering user id {:?}", user_id);
         self.user_connections
             .entry(user_id)
             .or_insert_with(Vec::new)
