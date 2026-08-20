@@ -1,6 +1,7 @@
 mod controller;
 mod service;
-mod repository;
+mod postgres;
+mod composite_repository;
 mod domain_models;
 mod tarantool;
 pub mod service_provider;
