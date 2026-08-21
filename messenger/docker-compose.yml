@@ -53,8 +53,7 @@ services:
     depends_on:
       - master
       - worker
-    networks:
-      - [ backend ]
+    networks: [ backend ]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "haproxy", "-c", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
@@ -71,8 +70,7 @@ services:
     depends_on:
       - haproxy
       - tarantool
-    networks:
-      - [ backend, frontend ]
+    networks: [ backend, frontend ]
     restart: unless-stopped
 
   nginx:
