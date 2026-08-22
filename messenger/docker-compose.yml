@@ -32,6 +32,7 @@ services:
     depends_on: [master]
     env_file: .env
     networks: [ backend ]
+    restart: unless-stopped
 
   tarantool:
     image: tarantool/tarantool:latest
