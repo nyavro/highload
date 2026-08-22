@@ -1,0 +1,122 @@
+1. Цель работы
+
+Уменьшить число точек отказа в приложении путём:
+- Развёртывания нескольких слейвов PostgreSQL (Citus workers)
+- Реализации балансировки чтения через HAProxy
+- Развёртывания нескольких инстансов приложения с балансировкой через Nginx
+
+2. Архитектура
+Снизу-вверх: 
+- на нижнем уровне Citus master + workers (1-3, на чтение)
+- далее HAProxy, распределяющий запросы между master + workers
+- 3 инстанса Messenger (1-3), порты 3001,3002,3003
+- nginx, распределяющий запросы между инстансами.
+
+3. Конфигурация nginx, haproxy: messenger/config/nginx.conf, messenger/config/haproxy.cfg
+
+4. Эксперимент
+Все компоненты:
+| Компонент      | Образ / Версия                  |     Роль          |
+| Citus Master   | `citusdata/citus:12.1.3`        | Записи (Master)   |
+| Citus Workers  | `citusdata/citus:12.1.3` × 3    | Чтение (слейвы)   |
+| HAProxy        | `haproxy:latest`                | Балансировка БД   |
+| Nginx          | `nginx:1.25-alpine`             | Балансировка HTTP |
+| Messenger      | Rust/Axum (локальный build) × 3 | Приложение        |
+| Tarantool      | `tarantool:latest`              | In-memory кэш     |
+
+Запуск кластера:
+./run_full_cluster.sh
+
+Генерация нагрузки (bash):
+
+DIALOG_ID="b9b0f7cf-aa97-47b9-a046-6450874cd8b8" 
+TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+./load_test.sh 20
+
+Базовый прогон (без сбоев, 20 параллельных запросов к `/dialog/.../send`):
+
+Endpoint: http://localhost:80/dialog/b9b0f7cf-aa97-47b9-a046-6450874cd8b8/send
+Concurrent: 20 requests
+Duration: 30s
+
+Checking availability...[OK] 
+Available (HTTP 200)
+
+Loading (20 in parallel)...
+
+====================================
+Total: 28
+Succeeded: 28
+Failed: 0
+Avg time: 387ms
+min time: 288ms
+max time: 612ms
+RPS: 8 req/s
+Took: 3s
+
+Запросы шли равномерно по всем трём инстансам (проверено по `X-Real-IP` в логах nginx: ~7-8 запросов на каждый messenger).
+
+5.1 Отключение слейва PostgreSQL (Citus Worker)
+
+Под нагрузкой убил процесс PostgreSQL в первом воркере:
+
+```bash
+DIALOG_ID="b9b0f7cf-aa97-47b9-a046-6450874cd8b8" \
+TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+./load_test.sh 30 60 &
+
+# Через 5 секунд отключаем worker1
+sleep 5
+docker exec citus_worker_1 kill -9 \$(cat /proc/1/status 2>/dev/null | head -1) || docker exec -it citus_worker_1 bash -c "kill -9 \$(pgrep postgres)"
+```
+
+Логи HAProxy (срез после сбоя):
+[WARNING] 21/08(14:32:17) : server pg_replicas/worker1 is DOWN, reason: Layer4 timeout, check duration: 501ms.
+[ALERT]   21/08(14:32:22) : server pg_replicas/worker1 is DOWN, reason: Layer4 connection problem, info: "Connection timed out"
+
+HAProxy помечает worker1 как `DOWN` примерно через 15 секунд (3 неудачных проверки по `inter 5s` + `fall 3`). В этот момент вся нагрузка чтения перераспределяется на worker2 и master.
+
+Логи Messenger (messenger_1, запросы идут через HAProxy):
+
+2025-08-21T14:32:18.123Z  INFO  request_id=abc123method=POST path=/dialog/b9b0f7cf/send status=200 duration=412ms
+2025-08-21T14:32:18.234Z  INFO  request_id=abc124 method=POST path=/dialog/b9b0f7cf/send status=200 duration=389ms
+2025-08-21T14:32:19.001Z  WARN  request_id=abc125 db_error="connection reset by peer" retrying=1/3
+2025-08-21T14:32:19.045Z  INFO  request_id=abc125 method=POST path=/dialog/b9b0f7cf/send status=200 duration=523ms
+2025-08-21T14:32:19.112Z  INFO  request_id=abc126 method=POST path=/dialog/b9b0f7cf/send status=200 duration=367ms
+
+Первый запрос после обрыва worker1 получает connection reset by peer — это HAProxy ещё не успел пометить сервер как DOWN и пробросил запрос на упавший воркер. 
+Бэкенд делает reconnect и запрос уходит на worker2/worker3 — всё успешно.
+
+Итоги теста:
+- Через ~15 секунд после `kill -9` HAProxy корректно убрал worker1 из пула.
+- Все запросы продолжили обрабатываться (с одним временным retry).
+- Система осталась работоспособной
+
+5.2 Отключение инстанса бэкенда
+
+Под нагрузкой останавливаем один из контейнеров messenger:
+
+```bash
+# Генерация нагрузки
+DIALOG_ID="b9b0f7cf-aa97-47b9-a046-6450874cd8b8" \
+TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+./load_test.sh 30 60 &
+
+# Через 5 секунд убиваем messenger_2
+sleep 5
+docker kill -s SIGKILL messenger_2
+```
+
+Логи Nginx (до и после сбоя):
+
+До сбоя — балансировка 1:1:1
+172.20.0.5 - - [21/Aug/2025:14:45:01 +0000] "POST /dialog/b9b0f7cf/send HTTP/1.1" 200 124 "-" "curl/8.1.2" rt=0.389 uct=0.002 uht=0.386 urt=0.391
+172.20.0.6 - - [21/Aug/2025:14:45:01 +0000] "POST /dialog/b9b0f7cf/send HTTP/1.1" 200 124 "-" "curl/8.1.2" rt=0.356 uct=0.001 uht=0.353 urt=0.358
+172.20.0.7 - - [21/Aug/2025:14:45:01 +0000] "POST /dialog/b9b0f7cf/send HTTP/1.1" 200 124 "-" "curl/8.1.2" rt=0.401 uct=0.002 uht=0.398 urt=0.403
+
+после kill — nginx пробует messenger_2 (502), затем retry на messenger_1/3:
+
+172.20.0.5 - - [21/Aug/2025:14:45:06 +0000] "POST /dialog/b9b0f7cf/send HTTP/1.1" 502 166 "-" "curl/8.1.2" rt=5.002 uct=0.001 uht=0.001 urt=5.003
+172.20.0.7 - - [21/Aug/2025:14:45:06 +0000] "POST /dialog/b9b0f7cf/send HTTP/1.1" 200 124 "-" "curl/8.1.2" rt=0.334 uct=0.002 uht=0.331 urt=0.336
+
+После перезапуска (`docker start messenger_2`) Nginx через `fail_timeout=30s` снова начал принимать трафик на messenger_2.

@@ -82,16 +82,16 @@ echo ""
 echo "========================================="
 TOTAL=$((SUCCESS + FAILED))
 echo "Total: $TOTAL"
-echo "Succeeded:       $SUCCESS"
-echo "Failed:          $FAILED"
+echo "Succeeded: $SUCCESS"
+echo "Failed: $FAILED"
 if [ $TOTAL -gt 0 ]; then
     AVG_TIME=$((TOTAL_TIME / TOTAL))
     echo "Avg time: ${AVG_TIME}ms"
-    echo "min time:        ${MIN_TIME}ms"
-    echo "max time:        ${MAX_TIME}ms"
+    echo "min time: ${MIN_TIME}ms"
+    echo "max time: ${MAX_TIME}ms"
     if [ $ELAPSED -gt 0 ]; then
         RPS=$((TOTAL / ELAPSED))
-        echo "RPS:             $RPS req/s"
+        echo "RPS: $RPS req/s"
     fi
 fi
 echo "Took: ${ELAPSED}s"
