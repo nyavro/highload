@@ -1,7 +1,7 @@
 services:
   master:
     container_name: "${COMPOSE_PROJECT_NAME:-citus}_master"
-    image: 'citusdata/citus:12.1.3' 
+    image: 'citusdata/citus:12.1.3'
     ports:
       - "${MASTER_EXTERNAL_PORT:-5532}:5432"
     labels: [ "com.citusdata.role=master" ]
@@ -9,16 +9,19 @@ services:
     volumes:
       - citus_master_data:/var/lib/postgresql/data
     networks: [ backend ]      
+    restart: unless-stopped
 
   worker:
     image: "citusdata/citus:12.1.3"
+    container_name: "${COMPOSE_PROJECT_NAME:-citus}_worker"
     labels: ["com.citusdata.role=Worker"]
     depends_on: [manager]
     env_file: .env
     command: "/wait-for-manager.sh"
     volumes:
-      - healthcheck-volume:/healthcheck      
+      - healthcheck-volume:/healthcheck
     networks: [ backend ]
+    restart: unless-stopped
 
   manager:
     container_name: "${COMPOSE_PROJECT_NAME:-citus}_manager"
@@ -37,16 +40,18 @@ services:
       - "3301:3301"
     env_file: .env
     command: tarantool /opt/tarantool/init.lua
-    volumes:      
+    volumes:
       - ./init/init-in-memory-db.lua:/opt/tarantool/init.lua
       - tarantool_data:/var/lib/tarantool
     networks: [ backend ]
+    restart: unless-stopped
 
   haproxy:
     image: haproxy:latest
     container_name: messenger-haproxy
     ports:
       - "5432:5432"
+      - "5433:5433"
       - "8404:8404"
     volumes:
       - ./config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
@@ -116,7 +121,7 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: nginx:1.25-1.25-alpine
+    image: nginx:1.25-alpine
     container_name: messenger-nginx
     ports: 
       - "80:80"
