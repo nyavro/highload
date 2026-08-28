@@ -1,10 +1,11 @@
 use axum::extract::State;
 use axum::{Router};
-use axum::routing::{get};
+use axum::routing::{get, post};
 use axum::http::StatusCode;
 use axum::response::Json;
 use fred::interfaces::ClientLike;
 
+use crate::modules::counter;
 use crate::app_state::AppState;
 
 async fn redis_health_check(State(state): State<AppState>) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
@@ -37,5 +38,6 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health_check))
         .route("/redis/health", get(redis_health_check))
+        .route("/counter/{user_id}/increment", post(counter::controller::increment_counter))
         .with_state(state)
 }
