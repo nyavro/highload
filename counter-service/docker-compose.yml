@@ -1,0 +1,11 @@
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_app_cs
+    restart: always
+    ports:
+      - "6380:6379"
+    volumes:
+      - ./redis_data:/data
+    command: redis-server --requirepass secure_password --appendonly yes
