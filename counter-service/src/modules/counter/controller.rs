@@ -22,3 +22,29 @@ pub async fn increment_counter(
         ))?;
     Ok(Json(CounterResponse {user_id, count}))
 }
+
+pub async fn decrement_counter(
+    State(state): State<AppState>,
+    Path(user_id): Path<String>,
+) -> Result<Json<CounterResponse>, (StatusCode, Json<serde_json::Value>)> {
+    let repo = CounterRepositoryImpl::new(state.redis_pool.clone());
+    let count = repo.decrement(&user_id).await
+        .map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": e.to_string()}))
+        ))?;
+    Ok(Json(CounterResponse {user_id, count}))
+}
+
+pub async fn get_counter(
+    State(state): State<AppState>,
+    Path(user_id): Path<String>,
+) -> Result<Json<CounterResponse>, (StatusCode, Json<serde_json::Value>)> {
+    let repo = CounterRepositoryImpl::new(state.redis_pool.clone());
+    let count = repo.get(&user_id).await
+        .map_err(|e| (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": e.to_string()}))
+        ))?;
+    Ok(Json(CounterResponse {user_id, count}))
+}

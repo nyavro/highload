@@ -28,7 +28,9 @@ impl CounterRepositoryImpl {
 
 #[async_trait]
 pub trait CounterRepository {
+    async fn get(&self, user_id: &str) -> Result<i64, CounterError>;
     async fn increment(&self, user_id: &str) -> Result<i64, CounterError>;
+    async fn decrement(&self, user_id: &str) -> Result<i64, CounterError>;
 }
 
 #[async_trait]
@@ -37,6 +39,20 @@ impl CounterRepository for CounterRepositoryImpl {
         let key = Self::make_key(user_id);
         let client = self.pool.next();
         let val: i64 = client.incr(&key).await?;
+        Ok(val)
+    }
+
+    async fn decrement(&self, user_id: &str) -> Result<i64, CounterError> {
+        let key = Self::make_key(user_id);
+        let client = self.pool.next();
+        let val: i64 = client.decr(&key).await?;
+        Ok(val)
+    }
+
+    async fn get(&self, user_id: &str) -> Result<i64, CounterError> {
+        let key = Self::make_key(user_id);
+        let client = self.pool.next();
+        let val: i64 = client.get(&key).await?;
         Ok(val)
     }
 }

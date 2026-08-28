@@ -38,6 +38,8 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health_check))
         .route("/redis/health", get(redis_health_check))
+        .route("/counter/{user_id}", get(counter::controller::get_counter))
         .route("/counter/{user_id}/increment", post(counter::controller::increment_counter))
+        .route("/counter/{user_id}/decrement", post(counter::controller::decrement_counter))
         .with_state(state)
 }
