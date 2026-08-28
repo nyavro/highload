@@ -11,7 +11,6 @@ use tower_http::{
 use tower_http::request_id::RequestId;
 use tracing::Level;
 use axum::routing::get;
-use std::net::SocketAddr;
 use tokio::signal;
 
 mod app_state;
@@ -96,7 +95,7 @@ async fn main() -> Result<(), Error> {
                 })
                 .on_response(DefaultOnResponse::new().level(Level::INFO)),
         )        
-        .layer(SetRequestIdLayer::new(x_request_id.clone(), MakeRequestUuid));;        
+        .layer(SetRequestIdLayer::new(x_request_id.clone(), MakeRequestUuid));        
     let port = app_state.port;
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await.unwrap();
     tracing::info!("Server is running on port {}", port);
