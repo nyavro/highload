@@ -1,7 +1,8 @@
 mod modules;
 mod app_state;
+mod migrations;
 
-use std::error::Error;
+use std::{error::Error, sync::Arc};
 use tokio::net::TcpListener;
 use dotenv::dotenv;
 use tracing::info;
@@ -30,6 +31,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     init_tracing();      
 
     let state = AppState::init().await?;
+    migrations::run_migrations(Arc::clone(&state.postgres_pool)).await;
 
     let port = std::env::var("APPLICATION_PORT").unwrap_or_else(|_| "3004".to_string());
     let listener = TcpListener::bind(format!("0.0.0.0:{}", port)).await?;

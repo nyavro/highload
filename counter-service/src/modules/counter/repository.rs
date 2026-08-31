@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use fred::clients::Pool;
 use fred::prelude::*;
@@ -13,11 +15,11 @@ pub enum CounterError {
 
 #[derive(Debug, Clone)]
 pub struct CounterRepositoryImpl {
-    pool: Pool
+    pool: Arc<Pool>
 }
 
 impl CounterRepositoryImpl {
-    pub fn new(pool: Pool) -> Self {
+    pub fn new(pool: Arc<Pool>) -> Self {
         Self { pool }
     }
 

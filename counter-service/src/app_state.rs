@@ -1,11 +1,13 @@
 use fred::types::config::ReconnectPolicy;
-use std::{env, error::Error, time::Duration};
-use tracing::info;
+use std::{env, error::Error, sync::Arc, time::Duration};
+use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod, Runtime, Object};
 use fred::{prelude::*};
+use tokio_postgres::{NoTls};
 
 #[derive(Clone)]
 pub struct AppState {
-    pub redis_pool: Pool,
+    pub redis_pool: Arc<fred::prelude::Pool>,
+    pub postgres_pool: Arc<deadpool_postgres::Pool>,
 }
 
 async fn init_redis_pool() -> Result<fred::prelude::Pool, fred::prelude::Error> {
@@ -26,9 +28,27 @@ async fn init_redis_pool() -> Result<fred::prelude::Pool, fred::prelude::Error> 
     Ok(pool)
 }
 
+
+fn init_config(port_key: &str) -> Config {
+    let mut config = Config::new();
+    config.user = env::var("POSTGRES_USER").ok();     
+    config.password = env::var("POSGTRES_PASSWORD").ok();    
+    config.dbname = env::var("POSTGRES_DB_NAME").ok();        
+    config.host = env::var("POSTGRES_HOST").ok();
+    config.port = env::var(port_key).ok().map(|port| port.parse().unwrap());
+    config.manager = Some(ManagerConfig { recycling_method: RecyclingMethod::Fast });        
+    config.connect_timeout = Some(Duration::from_secs(10));        
+    config
+}
+
 impl AppState {
     pub async fn init() -> Result<Self, Box<dyn Error + Send + Sync>> {
         let redis_pool = init_redis_pool().await?;
-        Ok(Self {redis_pool})
+        let postgres_pool = init_config(
+                "POSTGRES_PORT"
+            )
+            .create_pool(Some(Runtime::Tokio1), NoTls).unwrap();
+        postgres_pool.resize(10);        
+        Ok(Self {redis_pool: Arc::new(redis_pool), postgres_pool: Arc::new(postgres_pool)})
     }
 }
