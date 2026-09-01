@@ -1,6 +1,6 @@
 use serde::Serialize;
 use axum::{Json, extract::{Path, State}, http::StatusCode};
-use crate::modules::counter::repository::CounterRepositoryImpl;
+use crate::modules::counter::{repository::CounterRepositoryImpl, service::SagaOrchestrator};
 use crate::modules::counter::repository::CounterRepository;
 use crate::app_state::AppState;
 
@@ -14,8 +14,8 @@ pub async fn increment_counter(
     State(state): State<AppState>,
     Path(user_id): Path<String>,
 ) -> Result<Json<CounterResponse>, (StatusCode, Json<serde_json::Value>)> {
-    let repo = CounterRepositoryImpl::new(state.redis_pool.clone());
-    let count = repo.increment(&user_id).await
+    let orchestrator = SagaOrchestrator::new(&state);
+    let count = orchestrator.inc(&user_id).await    
         .map_err(|e| (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({"error": e.to_string()}))
@@ -27,8 +27,8 @@ pub async fn decrement_counter(
     State(state): State<AppState>,
     Path(user_id): Path<String>,
 ) -> Result<Json<CounterResponse>, (StatusCode, Json<serde_json::Value>)> {
-    let repo = CounterRepositoryImpl::new(state.redis_pool.clone());
-    let count = repo.decrement(&user_id).await
+    let orchestrator = SagaOrchestrator::new(&state);
+    let count = orchestrator.dec(&user_id).await    
         .map_err(|e| (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({"error": e.to_string()}))

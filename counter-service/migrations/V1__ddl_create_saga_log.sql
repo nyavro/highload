@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS saga_log (
-    saga_id VARCHAR(35) PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     saga_type VARCHAR(50) NOT NULL,
     user_id VARCHAR(35) NOT NULL,
     status VARCHAR(20) NOT NULL,

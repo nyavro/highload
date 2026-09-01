@@ -68,9 +68,9 @@ impl SagaLogRepositoryImpl {
 impl SagaLogRepository for SagaLogRepositoryImpl {
     async fn create_saga(&self, saga_type: &str, user_id: &str) -> Result<(Uuid, SagaRecord), SagaLogError> {
         let saga_id = Uuid::new_v4();
-        let client = self.pool.get().await?;
+        let client = self.pool.get().await?;        
         client.execute(
-            "INSERT INTO saga_log(saga_id, saga_type, user_id, status) VALUES ($1, $2, $3, $4",
+            "INSERT INTO saga_log(id, saga_type, user_id, status) VALUES ($1, $2, $3, $4)",
             &[
                 &saga_id,
                 &saga_type,
@@ -95,7 +95,7 @@ impl SagaLogRepository for SagaLogRepositoryImpl {
     async fn update_saga(&self, saga_id: Uuid, new_status: &SagaStatus, compensation: Option<String>) -> Result<(), SagaLogError> {        
         let client = self.pool.get().await?;
         client.execute(
-            "UPDATE saga_log SET status = $1, compensation = &2 WHERE saga_id = $3",
+            "UPDATE saga_log SET status = $1, compensation = $2 WHERE id = $3",
             &[
                 &new_status.to_string(),
                 &compensation,
@@ -108,7 +108,7 @@ impl SagaLogRepository for SagaLogRepositoryImpl {
     async fn update_saga_value(&self, saga_id: Uuid, value: i64) -> Result<(), SagaLogError> {        
         let client = self.pool.get().await?;
         client.execute(
-            "UPDATE saga_log SET value = $1 WHERE saga_id = $2",
+            "UPDATE saga_log SET value = $1 WHERE id = $2",
             &[
                 &value,
                 &saga_id
@@ -120,11 +120,11 @@ impl SagaLogRepository for SagaLogRepositoryImpl {
     async fn get_by_status(&self, status: &SagaStatus) -> Result<Vec<SagaRecord>, SagaLogError> {
         let client = self.pool.get().await?;
         let rows = client.query(
-            "SELECT saga_id, saga_type, user_id, status, value, compensation, created_at FROM saga_log WHERE status = $1 ORDER BY created_at ASC",
+            "SELECT id, saga_type, user_id, status, value, compensation, created_at FROM saga_log WHERE status = $1 ORDER BY created_at ASC",
             &[&status.to_string()]
         ).await?;
         let records: Vec<SagaRecord> = rows.iter().map(|row| SagaRecord {
-            saga_id: row.get("saga_id"),
+            saga_id: row.get("id"),
             saga_type: row.get("saga_type"),
             user_id: row.get("user_id"),
             status: row.get("status"),
@@ -138,12 +138,12 @@ impl SagaLogRepository for SagaLogRepositoryImpl {
     async fn get_by_id(&self, saga_id: Uuid) -> Result<Option<SagaRecord>, SagaLogError> {
         let client = self.pool.get().await?;
         let row = client.query_opt(
-            "SELECT saga_id, saga_type, user_id, status, value, compensation, created_at FROM saga_log WHERE saga_id = $1",
+            "SELECT saga_id, saga_type, user_id, status, value, compensation, created_at FROM saga_log WHERE id = $1",
             &[&saga_id]
         ).await?;
         Ok(
             row.map(|row| SagaRecord {
-                saga_id: row.get("saga_id"),
+                saga_id: row.get("id"),
                 saga_type: row.get("saga_type"),
                 user_id: row.get("user_id"),
                 status: row.get("status"),
