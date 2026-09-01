@@ -7,6 +7,7 @@ edition = "2024"
 async-trait = "0.1.92"
 axum = "0.8.9"
 chrono = "0.4.45"
+deadpool = { version = "0.13.1", features = ["rt_tokio_1"] }
 deadpool-postgres = "0.14.2"
 deadpool-redis = { version = "0.23.1", features = ["tokio-comp"] }
 dotenv = "0.15.0"
@@ -20,3 +21,4 @@ tokio = { version = "1.53.1", features = ["full"] }
 tokio-postgres = { version = "0.7.18", features = ["with-chrono-0_4", "with-uuid-1"] } 
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+uuid = { version = "1.26.0", features = ["serde", "v4"] }

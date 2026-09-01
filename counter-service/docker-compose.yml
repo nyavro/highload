@@ -10,7 +10,7 @@ services:
       - ./redis_data:/data
     command: redis-server --requirepass secure_password --appendonly yes
 
-  postgres-master:
+  postgres-cs:
     image: postgres:13.3
     container_name: postgres_cs
     environment:
@@ -20,7 +20,7 @@ services:
     ports:
       - "5432:5432"
     volumes:    
-      - postgres-master-data:/var/lib/postgresql/data
+      - cs-postgres-data:/var/lib/postgresql/data
 
 volumes:
-  postgres-master-data:      
+  cs-postgres-data:      

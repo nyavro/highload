@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS saga_log (
     user_id VARCHAR(35) NOT NULL,
     status VARCHAR(20) NOT NULL,
     value BIGINT,
+    compensation VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
