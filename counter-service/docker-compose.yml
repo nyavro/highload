@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
 
   redis:
@@ -14,13 +16,32 @@ services:
     image: postgres:13.3
     container_name: postgres_cs
     environment:
-      POSTGRES_DB: "highload"
+      POSTGRES_DB: "counters"
       POSTGRES_USER: "pguser"
       POSTGRES_PASSWORD: "pgpassword"      
     ports:
       - "5432:5432"
     volumes:    
       - cs-postgres-data:/var/lib/postgresql/data
+
+  counter-service:
+    build: .
+    ports:
+      - "3003:3003"
+    environment:
+      REDIS_URL: redis://redis:6379
+      REDIS_POOL_SIZE: "8"      
+      POSTGRES_USER: pguser
+      POSGTRES_PASSWORD: pgpassword
+      POSTGRES_DB_NAME: counters
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      RECONCILIATION_INTERVAL: "5"
+      RUST_LOG: info
+    depends_on:
+      - redis
+      - postgres-cs
+    restart: unless-stopped
 
 volumes:
   cs-postgres-data:      
