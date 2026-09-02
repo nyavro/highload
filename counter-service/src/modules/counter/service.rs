@@ -33,7 +33,7 @@ impl SagaOrchestrator {
     }
 
     pub async fn dec(&self, user_id: &str) -> Result<i64, SagaError> {
-        let (saga_id, _) = self.saga_repo.create_saga("MessageSend", user_id).await?;
+        let (saga_id, _) = self.saga_repo.create_saga("DialogRead", user_id).await?;
         let result = self.counter_repo.decrement(user_id).await;        
         self.handle_result(saga_id, result).await
     }

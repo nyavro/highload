@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use serde::Serialize;
 use axum::{Json, extract::{Path, State}, http::StatusCode};
 use crate::modules::counter::{repository::CounterRepositoryImpl, service::SagaOrchestrator};
@@ -11,7 +13,7 @@ pub struct CounterResponse {
 }
 
 pub async fn increment_counter(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(user_id): Path<String>,
 ) -> Result<Json<CounterResponse>, (StatusCode, Json<serde_json::Value>)> {
     let orchestrator = SagaOrchestrator::new(&state);
@@ -24,7 +26,7 @@ pub async fn increment_counter(
 }
 
 pub async fn decrement_counter(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(user_id): Path<String>,
 ) -> Result<Json<CounterResponse>, (StatusCode, Json<serde_json::Value>)> {
     let orchestrator = SagaOrchestrator::new(&state);
@@ -37,7 +39,7 @@ pub async fn decrement_counter(
 }
 
 pub async fn get_counter(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(user_id): Path<String>,
 ) -> Result<Json<CounterResponse>, (StatusCode, Json<serde_json::Value>)> {
     let repo = CounterRepositoryImpl::new(state.redis_pool.clone());

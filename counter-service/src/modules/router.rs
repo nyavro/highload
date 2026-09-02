@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::extract::State;
 use axum::{Router};
 use axum::routing::{get, post};
@@ -8,7 +10,7 @@ use fred::interfaces::ClientLike;
 use crate::modules::counter;
 use crate::app_state::AppState;
 
-async fn redis_health_check(State(state): State<AppState>) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+async fn redis_health_check(State(state): State<Arc<AppState>>) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     let mut client = state.redis_pool.next();    
     let result = client.ping::<String>(None).await;
     match result {
@@ -34,7 +36,7 @@ async fn health_check() -> axum::response::Json<serde_json::Value> {
     )
 }
 
-pub fn router(state: AppState) -> Router {
+pub fn router(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/health", get(health_check))
         .route("/redis/health", get(redis_health_check))
