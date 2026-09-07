@@ -27,6 +27,20 @@ async fn run_once(state: Arc<AppState>) -> Result<(), Box<dyn Error + Send + Syn
     }
     info!("To reconcile {} saga records", deferred.len());
     for record in &deferred {
+        if let Some(expected_value) = record.value {
+            match counter_repo.get(&record.user_id).await {
+                Ok(current_value) => {
+                    if current_value == expected_value {
+                        info!("Saga {} already reconciled, marking as COMPLETED", record.saga_id);
+                        saga_repo.update_saga(record.saga_id, &SagaStatus::Completed, Some("Idempotent check passed".to_string())).await?;
+                        continue;
+                    }
+                }
+                Err(e) => {                 
+                    warn!("Cannot get counter for user {} during idempotency check: {:?}", record.user_id, e);
+                }
+            }
+        }
         match record.saga_type.as_str() {
             "MessageSend" => {
                 match counter_repo.increment(&record.user_id).await {
@@ -48,7 +62,7 @@ async fn run_once(state: Arc<AppState>) -> Result<(), Box<dyn Error + Send + Syn
                         saga_repo.update_saga_value(record.saga_id, count).await?;
                     },
                     Err(e) => {
-                        warn!("Defererred MessageSend saga {} still failing: {:?}", record.saga_id, e);
+                        warn!("Deferred DialogRead saga {} still failing: {:?}", record.saga_id, e);
                     }
                 }
             },
