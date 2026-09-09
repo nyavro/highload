@@ -10,8 +10,9 @@ use tower_http::{
 };
 use tower_http::request_id::RequestId;
 use tracing::Level;
-use axum::routing::get;
+use axum::{middleware, routing::get};
 use tokio::signal;
+use modules::metrics::{handler::metrics_handler, middleware::metrics_middleware };
 
 mod app_state;
 mod migrations;
@@ -75,6 +76,7 @@ async fn main() -> Result<(), Error> {
     let app = openapi::server::new(Application::new(Arc::clone(&app_state)))
         .merge(axum::Router::new()
             .route("/health", get(health_check))
+            .route("/metrics", get(metrics_handler))
         )
         .layer(PropagateRequestIdLayer::new(x_request_id.clone()))        
         .layer(
@@ -95,10 +97,11 @@ async fn main() -> Result<(), Error> {
                 })
                 .on_response(DefaultOnResponse::new().level(Level::INFO)),
         )        
-        .layer(SetRequestIdLayer::new(x_request_id.clone(), MakeRequestUuid));        
+        .layer(SetRequestIdLayer::new(x_request_id.clone(), MakeRequestUuid))
+        .layer(middleware::from_fn(metrics_middleware));
     let port = app_state.port;
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await.unwrap();
-    tracing::info!("Server is running on port {}", port);
+    tracing::info!("Server is running on port {} with metrics enabled", port);
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await
