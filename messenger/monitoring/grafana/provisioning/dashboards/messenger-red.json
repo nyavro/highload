@@ -1,0 +1,33 @@
+{
+    "annotations": {
+        "list": []
+    },
+    "panels": [
+        {
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {},
+                    "mappings": [],
+                    "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {"h": 9, "w": 12, "x": 0, "y": 0},
+            "id": 1,
+            "options": {
+                "legend": {"calcs": [], "displayMode": "list", "placement": "bottom"},
+                "tooltip": {"mode": "single"}
+            },
+            "targets": [
+                {
+                    "expr": "http_requests_total",
+                    "interval": "",
+                    "legendFormat": "HTTP Requests Total",
+                    "refId": "A"            
+                }
+            ]
+        }
+    ]
+}

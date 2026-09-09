@@ -1,0 +1,46 @@
+{
+    "zabbix_export": {
+        "version": "7.0",
+        "date": "2026-09-09",
+        "date_format": "d-m-Y",
+        "groups": [
+            {
+                "name": "Templates/Monitoring",
+                "uuid": "f3e1c2d4-5b6a-4e7f-8c9d-1a2b3c4d5e6f"
+            }
+        ],
+        "templates": [
+            {
+                "name": "Messenger Host Monitoring",
+                "template": "Messenger Host Monitoring",
+                "uuid": "a1b2c3d4-5e6f-7g8h-9i0j-1k2l3m4n5o6p",
+                "groups": [
+                    {
+                        "name": "Templates/Monitoring",
+                        "uuid": "f3e1c2d4-5b6a-4e7f-8c9d-1a2b3c4d5e6f"
+                    }
+                ],
+                "items": [
+                    {
+                        "uuid": "h1i2j3k4-l5m6-n7o8-p9q0-r1s2t3u4v5w6",
+                        "name": "CPU Load (1m)",
+                        "key": "system.cpu.load[all,avg1]",
+                        "type": "ZABBIX",
+                        "value_type": "FLOAT",
+                        "delta": 1,
+                        "update_interval": "30s",
+                        "params": "",
+                        "buffer_size": "10m",
+                        "logtimefmt": "",                        
+                        "applications": [
+                            {
+                                "name": "CPU",
+                                "uuid": "g7h8i9j0-k1l2-m3n4-o5p6-q7r8s9t0u1v2"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+}

@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s  
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "messenger"
+    static_configs:
+      - targets: ["messenger_1:3000", "messenger_2:3000", "messenger_3:3000"]
+    scrape_interval: 15s
+    metrics_path: "/metrics"

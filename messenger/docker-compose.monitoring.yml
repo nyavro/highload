@@ -1,20 +1,104 @@
 services:
+
+  prometheus:
+    container_name: messenger-prometheus
+    image: prom/prometheus:latest
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - monitoring
+    restart: unless-stopped
+
   grafana:
     container_name: messenger-grafana
-    image: grafana/grafana:13.0
+    image: grafana/grafana:latest
     ports:
-      - "4001:4001"    
+      - "4001:3000"    
     environment:
       - GF_SECURITY=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_HTTP_PORT=3000
     volumes:
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
       - grafana_data:/var/lib/grafana
     networks: 
       - monitoring
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  zabbix-server:
+    container_name: messenger-zabbix-server
+    image: zabbix/zabbix-server-pgsql:latest
+    ports:
+      - "10051:10051"
+    environment:
+      - DB_SERVER_HOST=zabbix-postgres
+      - POSTGRES_HOST=zabbix-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=zabbix
+      - POSTGRES_PASSWORD=zabbix
+      - ZBX_DBNAME=zabbix
+      - ZBX_DBUSER=zabbix
+      - ZBX_DBPASSWORD=zabbix
+    depends_on:
+      - zabbix-postgres
+    networks:
+      - monitoring
     restart: unless-stopped
     
+  zabbix-frontend:
+    container_name: messenger-zabbix-frontend
+    image: zabbix/zabbix-web-nginx-pgsql:latest
+    ports:  
+      - "8081:8080"
+    environment:
+      - DB_SERVER_HOST=zabbix-postgres
+      - POSTGRES_HOST=zabbix-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=zabbix
+      - POSTGRES_PASSWORD=zabbix
+      - ZBX_SERVER_HOST=zabbix-server   
+    depends_on:
+      - zabbix-server 
+    restart: unless-stopped
+
+  zabbix-agent:
+    container_name: messenger-zabbix-agent
+    image: zabbix/zabbix-agent:latest
+    environment:
+      - ZBX_SERVER_HOST=zabbix-server
+      - ZBX_HOSTNAME=messenger-zabbix-agent
+    depends_on:
+      - zabbix-server
+    networks:
+      - monitoring
+    restart: unless-stopped
+  
+  zabbix-postgres:
+    container_name: monitoring-postgres
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=messenger
+      - POSTGRES_PASSWORD=messenger
+      - POSTGRES_DB=messenger
+    ports:
+      - "5432:5432"
+    networks:
+      - monitoring
+    restart: unless-stopped
+
 networks:
   monitoring:
     name: monitoring_network
