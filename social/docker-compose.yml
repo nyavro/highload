@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: "pgpassword"
       PG_REPLICA_SLOTS: "replica_slot1,replica_slot2"
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - postgres-master-data:/var/lib/postgresql/data
       - ./db-config/init-master.sh:/docker-entrypoint-initdb.d/init-master.sh

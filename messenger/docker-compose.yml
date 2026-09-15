@@ -1,9 +1,23 @@
 services:
+
+  postgres:
+    container_name: postgres-messenger
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=messenger
+      - POSTGRES_PASSWORD=messenger
+      - POSTGRES_DB=messenger
+    ports:
+      - "5529:5432"
+    networks:
+      - backend
+    restart: unless-stopped
+
   master:
     container_name: "${COMPOSE_PROJECT_NAME:-citus}_master"
     image: 'citusdata/citus:12.1.3'
     ports:
-      - "${MASTER_EXTERNAL_PORT:-5532}:5432"
+      - "${MASTER_EXTERNAL_PORT:-5530}:5432"
     labels: [ "com.citusdata.role=master" ]
     env_file: .env
     volumes:
