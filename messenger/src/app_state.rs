@@ -24,7 +24,8 @@ fn init_config(port_key: &str) -> Config {
     config.host = env::var("db_postgres_host").ok();
     config.port = env::var(port_key).ok().and_then(|port| port.parse().ok());
     config.manager = Some(ManagerConfig { recycling_method: RecyclingMethod::Fast });        
-    config.connect_timeout = Some(Duration::from_secs(10));        
+    config.connect_timeout = Some(Duration::from_secs(10));   
+    tracing::info!("db: {:?}", config);     
     config
 }
 

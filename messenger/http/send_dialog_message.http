@@ -1,8 +1,8 @@
 POST http://localhost:3001/dialog/b9b0f7cf-aa97-47b9-a046-6450874cd8b8/send
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiODFlMTc1ZDYtYjE1ZC00ZDYzLWFkMDctZGY0YzM5YjNiYmU4IiwiZXhwIjoxNzg5NDg0MTY3LCJ0b2tlbiI6bnVsbCwicmVxdWVzdF9pZCI6bnVsbH0.ogW_zXN2sljLwzGhIpNg7Wiou-JTD11MkWCic8dXZgs
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiODFlMTc1ZDYtYjE1ZC00ZDYzLWFkMDctZGY0YzM5YjNiYmU4IiwiZXhwIjoxNzg5NzI5MjY3LCJ0b2tlbiI6bnVsbCwicmVxdWVzdF9pZCI6bnVsbH0.f0RiVX7eey-bMBu1QWDtNzH2LhCVG7jSILgT8cGDQ2w
 content-type: application/json
 accept: application/json
 
 {    
-    "text": "Hope just fine!"
+    "text": "Hope just fine! 1"
 }

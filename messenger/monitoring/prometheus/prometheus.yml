@@ -8,3 +8,19 @@ scrape_configs:
       - targets: ["messenger_1:3000", "messenger_2:3000", "messenger_3:3000"]
     scrape_interval: 15s
     metrics_path: "/metrics"
+  
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["prometheus:9090"]
+
+  - job_name: "node_explorer"
+    static_configs:
+      - targets: ["node_exporter:9100"]
+  
+  - job_name: "docker"
+    docker_sd_configs:
+      - host: tcp://host.docker.internal:2375  # <--- Используем этот адрес
+    relabel_configs:
+      - source_labels: [__meta_docker_container_name]
+        target_label: container_name
+

@@ -9,4 +9,4 @@ CREATE TABLE dialogs(
     PRIMARY KEY (owner_id, to_id, message_id)
 );
 
-SELECT create_distributed_table('dialogs', 'owner_id');
+-- SELECT create_distributed_table('dialogs', 'owner_id');

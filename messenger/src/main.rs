@@ -70,7 +70,7 @@ async fn health_check() -> axum::response::Json<serde_json::Value> {
 async fn main() -> Result<(), Error> {
     init_env();
     let app_state = Arc::new(AppState::init().await.unwrap());
-    // migrations::run_migrations(app_state.clone()).await;
+    migrations::run_migrations(app_state.clone()).await;
     // mock::service::generate_messages(Arc::clone(&app_state)).await;
     let x_request_id = HeaderName::from_static("x-request-id");
     let app = openapi::server::new(Application::new(Arc::clone(&app_state)))
