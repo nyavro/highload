@@ -1,6 +1,6 @@
 use async_trait::async_trait; 
 use uuid::Uuid;
-use crate::modules::dialog::{domain_models, service_provider::{DialogRepository, DialogRepositoryError, DialogService}};
+use crate::modules::{dialog::{domain_models, service_provider::{DialogRepository, DialogRepositoryError, DialogService}}, metrics::handler};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -28,10 +28,22 @@ where R: DialogRepository + Send + Sync {
 
     async fn send_message(&self, from: Uuid, to: Uuid, text: &String) -> Result<Uuid, DialogServiceError> {
         tracing::info!("Dialog service processing message post");
-        Ok(self.repository.send(from, to, text).await?)
+        let dialog_id = format!("{from}-{to}");
+        let result = self.repository.send(from, to, text).await;
+        if result.is_ok() {
+            handler::inc_messages_sent(&dialog_id);
+        }
+        Ok(result?)
     }
 
     async fn list_messages(&self, from: Uuid, to: Uuid) -> Result<Vec<domain_models::DialogMessage>, DialogServiceError> {
-        Ok(self.repository.list(from, to, 0, 100).await?)
+        let dialog_id = format!("{from}-{to}");
+        let result = self.repository.list(from, to, 0, 100).await;
+        if let Ok(ref messages) = result {
+            if !messages.is_empty() {
+                handler::inc_messages_received(&dialog_id);
+            }
+        }
+        Ok(result?)
     }
 }

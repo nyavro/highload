@@ -39,14 +39,15 @@ pub async fn metrics_middleware(req: axum::http::Request<axum::body::Body>, next
     let path = req.uri().path().to_string();
     let handler = extract_handler(&path);
     handler::inc_requests(&handler, &method, 0);
+    handler::inc_active_connections();
     let response = next.run(req).await;
     let status = response.status().as_u16();
     let duration = start_time.elapsed().as_secs_f64();
+    handler::dec_active_connections();
     handler::observe_request_duration(&handler, &method, duration);
     if status >= 400 {
         handler::inc_errors(&handler, &method, status);
     }
-    handler::set_active_connections(1);
     tracing::info!(
         method = %method,
         path = %path,

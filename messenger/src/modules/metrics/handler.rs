@@ -18,14 +18,14 @@ pub struct DurationLabels {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
-pub struct DialogLabels {
+pub struct MessageLabels {
     pub dialog_id: String,    
 }
 
 static REQUESTS_TOTAL: Lazy<Family<MetricLabels, Counter<u64>>> = Lazy::new(|| {Family::default()});
 static ERRORS_TOTAL: Lazy<Family<MetricLabels, Counter<u64>>> = Lazy::new(|| {Family::default()});
-static MESSAGES_SENT_TOTAL: Lazy<Family<MetricLabels, Counter<u64>>> = Lazy::new(|| {Family::default()});
-static MESSAGES_RECEIVED_TOTAL: Lazy<Family<MetricLabels, Counter<u64>>> = Lazy::new(|| {Family::default()});
+static MESSAGES_SENT_TOTAL: Lazy<Family<MessageLabels, Counter<u64>>> = Lazy::new(|| {Family::default()});
+static MESSAGES_RECEIVED_TOTAL: Lazy<Family<MessageLabels, Counter<u64>>> = Lazy::new(|| {Family::default()});
 static REQUEST_DURATION: Lazy<Family<DurationLabels, Histogram>> = Lazy::new(|| {
     Family::new_with_constructor(|| {
         Histogram::new(vec![
@@ -89,20 +89,24 @@ pub fn set_active_connections(count: i64) {
     ACTIVE_CONNECTIONS.set(count);
 }
 
-pub fn inc_messages_sent(handler: &str, method: &str, status_code: u16) {
-    let labels = MetricLabels {
-        handler: handler.to_string(),
-        method: method.to_string(),
-        status_code,
+pub fn inc_active_connections() {
+    ACTIVE_CONNECTIONS.inc();
+}
+
+pub fn dec_active_connections() {
+    ACTIVE_CONNECTIONS.dec();
+}
+
+pub fn inc_messages_sent(dialog_id: &str) {
+    let labels = MessageLabels {
+        dialog_id: dialog_id.to_string()
     };
     MESSAGES_SENT_TOTAL.get_or_create(&labels).inc();
 }
 
-pub fn inc_messages_received(handler: &str, method: &str, status_code: u16) {
-    let labels = MetricLabels {
-        handler: handler.to_string(),
-        method: method.to_string(),
-        status_code,
+pub fn inc_messages_received(dialog_id: &str) {
+    let labels = MessageLabels {
+        dialog_id: dialog_id.to_string()
     };
     MESSAGES_RECEIVED_TOTAL.get_or_create(&labels).inc();
 }
