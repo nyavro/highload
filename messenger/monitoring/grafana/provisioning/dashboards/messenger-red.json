@@ -756,7 +756,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "expr": "sum(rate(node_cpu_seconds_total{mode!="idle"}[5m])) by (mode)",
+                    "expr": "100 - (avg by (mode) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
                     "legendFormat": "{{mode}}",
                     "refId": "A"
                 }
@@ -885,7 +885,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "expr": "sum(rate(node_network_receive_bytes_total{device!="lo"}[5m])) by (device)",
+                    "expr": "sum(rate(node_network_receive_bytes_total{device!=\"lo\"}[5m])) by (device)",
                     "legendFormat": "rx {{device}}",
                     "refId": "A"
                 },
@@ -894,7 +894,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "expr": "sum(rate(node_network_transmit_bytes_total{device!="lo"}[5m])) by (device)",
+                    "expr": "sum(rate(node_network_transmit_bytes_total{device!=\"lo\"}[5m])) by (device)",
                     "legendFormat": "tx {{device}}",
                     "refId": "B"
                 }

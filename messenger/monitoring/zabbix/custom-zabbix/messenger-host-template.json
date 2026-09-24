@@ -21,8 +21,7 @@
                     }
                 ],
                 "items": [
-                    {
-                        "uuid": "h1i2j3k4-l5m6-n7o8-p9q0-r1s2t3u4v5w6",
+                    {                        
                         "name": "CPU Load (1m)",
                         "key": "system.cpu.load[all,avg1]",
                         "type": "ZABBIX",
@@ -37,6 +36,17 @@
                                 "name": "CPU",
                                 "uuid": "g7h8i9j0-k1l2-m3n4-o5p6-q7r8s9t0u1v2"
                             }
+                        ]
+                    },
+                    {
+                        "name": "Disk Free Space",
+                        "type": "ZABBIX",
+                        "key": "vfs.fs.size[/,free]",
+                        "value_type": "FLOAT",
+                        "units": "B",
+                        "update_interval": "60s",
+                        "applications": [
+                            { "name": "Filesystem" }
                         ]
                     }
                 ]

@@ -1,6 +1,6 @@
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
 use std::{env, time::Duration};
-use crate::modules::{common::tarantool::tarantool_manager::TarantoolManager, dialog::service_provider::{DialogService, create_service}};
+use crate::modules::{common::tarantool::tarantool_manager::TarantoolManager, dialog::service_provider::{DialogService, create_service}, metrics::handler};
 use std::sync::Arc;
 use deadpool_postgres::{Runtime, Object};
 use tokio_postgres::{NoTls};
@@ -64,6 +64,8 @@ impl AppState {
                 .map(Arc::clone)
                 .unwrap_or_else(|| Arc::clone(&master_pool))
         );
+        handler::set_postgres_pool_size(10);
+        handler::set_tarantool_pool_size(10);
         Ok(
             AppState {
                 replica_pool,

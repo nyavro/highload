@@ -8,13 +8,76 @@ groups:
           severity: critical
         annotations:
           summary: "High HTTP error rate"
-          description: "High HTTP error rate > 5% in 2 minutes (now {{ $value | humanizePercentage }})"
+          description: "High HTTP error rate > 5% in last 2 minutes (now {{ $value | humanizePercentage }})"
       
+      - alert: HighLatencyP99
+        expr: histogram_quantile(0.99, sum(rate(request_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency (P99)"
+          description: "High latency (P99) > 1s in last 2 minutes (now {{ $value | humanizeDuration }})"
+
+      - alert: HighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(request_duration_seconds_bucket[5m])) by (le)) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency (P95)"
+          description: "High latency (P95) > 0.5s in last 2 minutes (now {{ $value | humanizeDuration }})"
+
       - alert: MessengerDown
         expr: up{job="messenger"} == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "Messenger is down"
+          summary: "Messenger instance down"
           description: "Instance {{ $labels.instance }} not reachable for more than a minute"
+
+      - alert: HighActiveConnections
+        expr: sum(active_connections) > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of active connections"
+          description: "Active connections > 100 in last 2 minutes (now {{ $value }})"          
+        
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space on root partition is below 10% (now {{ $value | humanizePercentage }})"
+
+      - alert: HighCPUUsage
+        expr: rate(node_cpu_seconds_total{mode="system"}[5m]) > 0.8
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage > 80% in last 2 minutes (now {{ $value | humanizePercentage }})"          
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.8
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage > 80% in last 2 minutes (now {{ $value | humanizePercentage }})"
+
+      - alert: MessageSendLatencyHigh
+        expr: histogram_quantile(0.95, sum(rate(message_send_duration_seconds_bucket[5m])) by (le)) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High message send latency (P95)"
+          description: "Message send latency (P95) > 0.5s in last 2 minutes (now {{ $value | humanizeDuration }})"                    
