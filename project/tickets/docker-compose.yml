@@ -1,0 +1,83 @@
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_app_tickets
+    restart: always
+    ports:
+      - "6380:6379"
+    volumes:
+      - ./redis_data:/data
+    command: redis-server --requirepass secure_password --appendonly yes
+
+  postgres:
+    image: postgres:13.3
+    container_name: postgres_tickets
+    environment:
+      POSTGRES_DB: "tickets"
+      POSTGRES_USER: "pguser"
+      POSTGRES_PASSWORD: "pgpassword"      
+    ports:
+      - "5432:5432"
+    volumes:    
+      - postgres-data:/var/lib/postgresql/data
+    restart: always
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka_tickets
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REREPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'      
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    restart: unless-stopped
+
+  # UI-panel for Kafka monitoring
+  kafdrop:
+    image: obsidiandynamics/kafdrop:4.0.1
+    container_name: kafdrop_tickets
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:29092"
+    depends_on:
+      - kafka
+    restart: unless-stopped
+
+  tickets-service:
+    build: .
+    ports:
+      - "3003:3003"
+    environment:
+      REDIS_URL: redis://:secure_password@redis:6379/
+      REDIS_POOL_SIZE: "8"      
+      POSTGRES_USER: "pguser"
+      POSTGRES_PASSWORD: "pgpassword"
+      POSTGRES_DB_NAME: "tickets"      
+      POSTGRES_HOST: "postgres" 
+      POSTGRES_PORT: "5432"
+      KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
+      APPLICATION_PORT: "3003"
+      RECONCILIATION_INTERVAL: "5"
+      RUST_LOG: "info"
+    depends_on:
+      - redis
+      - postgres
+      - kafka
+    restart: unless-stopped
+
+volumes:  
+  postgres-data:
