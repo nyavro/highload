@@ -3,11 +3,24 @@ use std::{env, error::Error, sync::Arc, time::Duration};
 use deadpool_postgres::{Config, ManagerConfig, RecyclingMethod, Runtime};
 use fred::{prelude::*};
 use tokio_postgres::{NoTls};
+use rdkafka::{ClientConfig, error::KafkaError, producer::FutureProducer};
+
+use crate::ensure_topic;
 
 #[derive(Clone)]
 pub struct AppState {
     pub redis_pool: Arc<fred::prelude::Pool>,
     pub postgres_pool: Arc<deadpool_postgres::Pool>,
+    pub kafka_producer: Arc<FutureProducer>,
+    pub kafka_topic: String,
+}
+
+fn init_kafka_producer(kafka_brokers: &String) -> Result<FutureProducer, KafkaError> {    
+    ClientConfig::new()
+        .set("bootstrap.servers", kafka_brokers)
+        .set("message.timeout.ms", "5000")        
+        .set("acks", "all") 
+        .create() 
 }
 
 async fn init_redis_pool() -> Result<fred::prelude::Pool, fred::prelude::Error> {
@@ -48,7 +61,23 @@ impl AppState {
                 "POSTGRES_PORT"
             )
             .create_pool(Some(Runtime::Tokio1), NoTls).unwrap();
-        postgres_pool.resize(10);        
-        Ok(Self {redis_pool: Arc::new(redis_pool), postgres_pool: Arc::new(postgres_pool)})
+        postgres_pool.resize(10);   
+        let kafka_brokers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")
+            .unwrap_or_else(|_| "localhost:9092".to_string());   
+        let kafka_producer = init_kafka_producer(&kafka_brokers).expect("Failed to create Kafka producer");
+        let kafka_topic = std::env::var("KAFKA_TICKETS_BILLING_TOPIC").unwrap_or_else(|_| "tickets-billing".to_string());
+        ensure_topic::ensure_kafka_topic_exists(
+            &kafka_brokers,
+            &kafka_topic,
+            1
+        ).await;
+        Ok(
+            Self {
+                redis_pool: Arc::new(redis_pool), 
+                postgres_pool: Arc::new(postgres_pool),
+                kafka_producer: Arc::new(kafka_producer),
+                kafka_topic
+            }
+        )
     }
 }

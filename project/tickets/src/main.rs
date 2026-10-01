@@ -1,5 +1,6 @@
 mod modules;
 mod app_state;
+mod ensure_topic;
 mod migrations;
 
 use std::{error::Error, sync::Arc};
@@ -40,7 +41,7 @@ async fn serve(state: Arc<AppState>) -> Result<(), Box<dyn Error + Send + Sync>>
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     init_env();  
     init_tracing();      
-    let state = Arc::new(AppState::init().await?);
+    let state = Arc::new(AppState::init().await?);        
     migrations::run_migrations(Arc::clone(&state.postgres_pool)).await;
     serve(Arc::clone(&state)).await?;
     Ok(())
