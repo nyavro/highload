@@ -10,7 +10,7 @@ USER_ID="00000000-0000-0000-0000-00000000000a"
 echo "🔍 Step 0: Querying available seat UUID from PostgreSQL..."
 # Make a quick query to the Postgres container to get the UUID for 'Sector 1', Row 1, Seat 5
 SEAT_ID=$(docker exec -i postgres_tickets psql -U "$POSTGRES_USER" -d "$POSTGRES_DB_NAME" -t -A -c \
-  "SELECT id FROM seats WHERE sector = 'Sector 1' AND row_number = 1 AND seat_number = 5;")
+  "SELECT id FROM seats WHERE sector = 'Sector 1' AND row_number = 1 AND seat_number = 7;")
 
 if [ -z "$SEAT_ID" ]; then
     echo "Error: Could not find the seat in the database. Please check if migrations were applied."
