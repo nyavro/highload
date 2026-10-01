@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use thiserror::Error;
 use chrono::Utc;
-use crate::modules::reservation::repository::RedisReservationRepository;
+use crate::modules::reservation::cache_repository::RedisReservationRepository;
 use crate::modules::order::repository::KafkaOrderRepository;
 use crate::modules::order::dto::{CheckoutInput, OrderPaidEvent};
 

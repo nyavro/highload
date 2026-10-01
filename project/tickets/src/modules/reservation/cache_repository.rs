@@ -73,4 +73,27 @@ impl RedisReservationRepository {
         Ok(result == 1)
     }
 
+    // Fast read hall scheme from Redis cache (O(1)).    
+    pub async fn get_cached_seats(&self, event_id: Uuid) -> Option<String> {
+        let cache_key = format!("event:{}:seats_cache", event_id);        
+        self.pool.get(cache_key).await.unwrap_or(None)
+    }
+    
+    pub async fn is_locked(&self, event_id: Uuid, seat: String) -> bool {
+        let lock_key = format!("event:{}:seat:{}:lock", event_id, seat);        
+        self.pool.exists(lock_key).await.unwrap_or(false)
+    }
+    
+    pub async fn set_cached_seats(&self, event_id: Uuid, json_string: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let cache_key = format!("event:{}:seats_cache", event_id);
+        let _: () = self.pool.set(
+            cache_key, 
+            json_string, 
+            Some(Expiration::EX(5)), 
+            None, 
+            false
+        ).await?;
+        Ok(())
+    }
+
 }

@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use thiserror::Error;
 
-use crate::modules::reservation::repository::RedisReservationRepository;
+use crate::modules::reservation::cache_repository::RedisReservationRepository;
 
 #[derive(Error, Debug)]
 pub enum ReservationError {

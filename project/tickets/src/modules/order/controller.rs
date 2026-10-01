@@ -7,7 +7,7 @@ use serde::Serialize;
 use uuid::Uuid;
 use std::sync::Arc;
 use crate::app_state::AppState;
-use crate::modules::reservation::repository::RedisReservationRepository;
+use crate::modules::reservation::cache_repository::RedisReservationRepository;
 use crate::modules::order::repository::KafkaOrderRepository;
 use crate::modules::order::service::{OrderService, OrderError};
 use crate::modules::order::dto::CheckoutInput;
