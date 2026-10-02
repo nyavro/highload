@@ -1,11 +1,14 @@
 use fred::types::config::ReconnectPolicy;
-use std::{env, error::Error, sync::Arc, time::Duration};
+use uuid::Uuid;
+use std::{collections::HashMap, env, error::Error, sync::Arc, time::Duration};
 use deadpool_postgres::{Config, ManagerConfig, RecyclingMethod, Runtime};
 use fred::{prelude::*};
 use tokio_postgres::{NoTls};
+use tokio::sync::watch;
 use rdkafka::{ClientConfig, error::KafkaError, producer::FutureProducer};
+use std::sync::{Mutex as StdMutex};
 
-use crate::ensure_topic;
+use crate::{ensure_topic, modules::reservation::controller::SeatStatusDto}; // UGLY!
 
 #[derive(Clone)]
 pub struct AppState {
@@ -13,7 +16,16 @@ pub struct AppState {
     pub postgres_pool: Arc<deadpool_postgres::Pool>,
     pub kafka_producer: Arc<FutureProducer>,
     pub kafka_topic: String,
+    pub seats_single_flight: SingleFlightGroup<Vec<SeatStatusDto>>
 }
+
+pub type SingleFlightGroup<T> = Arc<StdMutex<HashMap<Uuid, FlightState<T>>>>;
+
+#[derive(Clone)]
+pub enum FlightState<T> {
+    Pending(watch::Receiver<Option<T>>),
+}
+
 
 fn init_kafka_producer(kafka_brokers: &String) -> Result<FutureProducer, KafkaError> {    
     ClientConfig::new()
@@ -76,7 +88,8 @@ impl AppState {
                 redis_pool: Arc::new(redis_pool), 
                 postgres_pool: Arc::new(postgres_pool),
                 kafka_producer: Arc::new(kafka_producer),
-                kafka_topic
+                kafka_topic,
+                seats_single_flight: Arc::new(StdMutex::new(HashMap::new()))
             }
         )
     }
